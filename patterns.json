@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Portable behavioral patterns — these travel across projects. They represent meta-level observations about AI reasoning behavior, not project-specific facts.",
+  "last_updated": "",
+  "patterns": [],
+  "_schema": {
+    "pattern": {
+      "id": "string — unique identifier (e.g., 'pat_001')",
+      "category": "string — 'planning' | 'execution' | 'communication' | 'economics' | 'calibration'",
+      "content": "string — the pattern, stated as a behavioral tendency",
+      "countermeasure": "string — what the AI should do instead when this pattern is detected",
+      "confidence": {
+        "score": "number 0-1",
+        "reasoning": "string"
+      },
+      "reinforcement_count": "number — how many independent projects/sessions have confirmed this",
+      "last_reinforced": "string — ISO date",
+      "created": "string — ISO date",
+      "origin": "string — 'seed' | 'observed' | 'cross_check' | 'review' | 'human'",
+      "status": "string — 'active' | 'deprecated' | 'challenged'"
+    },
+    "categories_explained": {
+      "planning": "Patterns in how the AI plans work — premature commitment, shallow exploration, scope creep",
+      "execution": "Patterns in how the AI builds — deferral, shortcutting, declaring early completion",
+      "communication": "Patterns in how the AI communicates — mirroring, false confidence, aim-to-please",
+      "economics": "Patterns where the AI applies human cost-benefit heuristics that don't match its own situation",
+      "calibration": "Patterns in the AI's relationship to uncertainty — overconfidence, underconfidence, false precision"
+    },
+    "seed_patterns_note": "When this file is empty, the onboarding protocol may seed it with foundational patterns derived from known AI behavioral economics. These seeds start with confidence 0.5 and origin 'seed' — they must be confirmed through observation to reach full confidence."
+  }
+}
