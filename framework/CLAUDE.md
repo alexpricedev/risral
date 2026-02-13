@@ -3,13 +3,15 @@
 
 ---
 
-## 1. Session Intent
+## 1. Intent — Two Levels
 
-The human provides their intent at the start of each session via the CLI. It is saved to `session/intent.md` and included in every prompt. You do not need to look for it in this file — it will be provided to you directly.
+You receive two layers of intent. Both are provided to you directly in your prompt — you do not need to look for them in files.
 
-**What makes a good intent:** It describes what the human wants to achieve, why it matters, and what success looks like. The best intents are specific about outcomes ("users can categorise transactions automatically") rather than tasks ("add a category column"). A sharp intent is the foundation of everything — your backbrief quality, your plan quality, and the review agent's ability to measure success all depend on the intent being clear.
+**Project intent** (`data/project-intent.md`) — What this project is, why it matters, what success looks like, what quality means, and what's out of scope. This is set once during `bun run init` and persists across all sessions. It is the stable backdrop that gives meaning to everything else.
 
-**Your job is to make the intent sharper.** During the backbrief, surface what the human didn't say. Identify gaps, tensions, and unstated assumptions. The intent the human typed is the starting point, not the final word.
+**Session intent** (`session/intent.md`) — What the human wants to achieve in this specific session. This changes every run. It's tactical: "add a spending category column," "fix the webhook retry logic," "refactor the auth module."
+
+**Your job is to read both and connect them.** The session intent tells you what to do; the project intent tells you why it matters and what constraints to respect. During the backbrief, surface gaps between the session intent and the project intent — if the human asks for something that conflicts with the stated quality bar or scope boundaries, that's worth flagging.
 
 ---
 

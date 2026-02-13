@@ -34,9 +34,10 @@ function readSessionFile(config: RisralConfig, filename: string): string {
  */
 export function assembleBackbriefPrompt(config: RisralConfig): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
+  const projectIntent = readDataFile(config, "project-intent.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
-  const intent = readSessionFile(config, "intent.md");
+  const sessionIntent = readSessionFile(config, "intent.md");
 
   return `${claude}
 
@@ -46,9 +47,13 @@ export function assembleBackbriefPrompt(config: RisralConfig): string {
 
 You are in the backbrief sub-phase. Your ONLY job right now is to demonstrate understanding of the human's intent, surface what they haven't said, and ask every question you need answered. You are NOT producing a plan yet.
 
-## Human's Intent
+## Project Intent
 
-${intent || "No intent provided."}
+${projectIntent || "No project intent on file. The human should run 'bun run init' to set this up."}
+
+## Session Intent
+
+${sessionIntent || "No session intent provided."}
 
 ## Your Reputation Store (Project Memories)
 
@@ -91,6 +96,7 @@ Write your backbrief to: ${resolve(config.sessionDir, "backbrief.md")}
  */
 export function assemblePlanningPrompt(config: RisralConfig): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
+  const projectIntent = readDataFile(config, "project-intent.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
   const backbrief = readSessionFile(config, "backbrief.md");
@@ -103,6 +109,10 @@ export function assemblePlanningPrompt(config: RisralConfig): string {
 # CURRENT SESSION: PHASE 1b — PLANNING
 
 You have already completed your backbrief and received the human's feedback. Now produce a plan.
+
+## Project Intent
+
+${projectIntent || "No project intent on file."}
 
 ## Your Reputation Store (Project Memories)
 
@@ -151,10 +161,11 @@ Your plan MUST include:
  */
 export function assembleCrossCheckPrompt(config: RisralConfig): string {
   const mandate = readFrameworkFile(config, "cross-check-mandate.md");
+  const projectIntent = readDataFile(config, "project-intent.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
   const plan = readSessionFile(config, "plan.md");
-  const intent = readSessionFile(config, "intent.md");
+  const sessionIntent = readSessionFile(config, "intent.md");
 
   return `${mandate}
 
@@ -164,9 +175,13 @@ export function assembleCrossCheckPrompt(config: RisralConfig): string {
 
 You are the adversarial cross-check agent. Review the primary agent's planning output below.
 
-## Human's Original Intent
+## Project Intent
 
-${intent || "No intent recorded."}
+${projectIntent || "No project intent on file."}
+
+## Session Intent
+
+${sessionIntent || "No session intent recorded."}
 
 ## Current Reputation Store
 
@@ -206,10 +221,11 @@ export function assembleExecutionPrompt(
   decisionLog: string
 ): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
+  const projectIntent = readDataFile(config, "project-intent.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
   const plan = readSessionFile(config, "plan.md");
-  const intent = readSessionFile(config, "intent.md");
+  const sessionIntent = readSessionFile(config, "intent.md");
 
   return `${claude}
 
@@ -219,9 +235,13 @@ export function assembleExecutionPrompt(
 
 You are executing task ${task.index + 1} of the approved plan. You have full autonomy.
 
-## Human's Original Intent
+## Project Intent
 
-${intent || "No intent recorded."}
+${projectIntent || "No project intent on file."}
+
+## Session Intent
+
+${sessionIntent || "No session intent recorded."}
 
 ## Your Reputation Store
 
@@ -273,10 +293,11 @@ export function assembleReviewPrompt(
   tasks: Task[]
 ): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
+  const projectIntent = readDataFile(config, "project-intent.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
   const plan = readSessionFile(config, "plan.md");
-  const intent = readSessionFile(config, "intent.md");
+  const sessionIntent = readSessionFile(config, "intent.md");
 
   // Collect all task completion summaries
   const taskSummaries = tasks
@@ -299,9 +320,13 @@ export function assembleReviewPrompt(
 
 You are the review agent. Map what was built against what was planned. Capture every divergence.
 
-## Human's Original Intent
+## Project Intent
 
-${intent || "No intent recorded."}
+${projectIntent || "No project intent on file."}
+
+## Session Intent
+
+${sessionIntent || "No session intent recorded."}
 
 ## Reputation Store
 

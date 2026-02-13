@@ -13,11 +13,11 @@ A framework for AI-human collaboration that addresses the gap between AI capabil
 cd your-project
 git clone <risral-repo> .risral
 
-# Set up
+# Set up — guided questions will define your project intent
 cd .risral
 bun run init
 
-# Run a session — the CLI will ask for your intent
+# Run a session — the CLI will ask for your session intent
 bun run start -- ../
 ```
 
@@ -27,7 +27,7 @@ bun run start -- ../
 
 ### Three-Phase Operating Model
 
-**Phase 1a — Backbrief.** The human describes their intent via the CLI. The AI backbriefs — reflecting understanding, surfacing assumptions, identifying gaps, and asking every question it needs answered. The human reviews the backbrief and responds. This is the only interactive checkpoint.
+**Phase 1a — Backbrief.** The human describes their session intent via the CLI. The AI receives both the project intent (set during init) and the session intent, then backbriefs — reflecting understanding, surfacing assumptions, identifying gaps, and asking every question it needs answered. The human reviews the backbrief and responds. This is the only interactive checkpoint.
 
 **Phase 1b — Planning.** The AI takes the human's feedback, explores approaches internally, and picks the best one. It does not present a menu of options — that's deferral, not engineering. An adversarial cross-check sub-agent reviews the planning reasoning and updates reputation scores. The loop continues until the human approves the plan.
 
@@ -63,6 +63,7 @@ An adversarial sub-agent that reviews planning output on six dimensions: explora
     cross-check-mandate.md    — Adversarial agent's review criteria
     onboarding-protocol.md    — Cold start protocol
   data/                       — Project-specific data (gitignored)
+    project-intent.md         — Project intent (collected during init)
     memories.json             — Reputation store
     patterns.json             — Portable behavioral patterns
   orchestrator/               — The engine that runs the framework
