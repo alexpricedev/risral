@@ -3,7 +3,7 @@
 // Launches the planning session, collects the plan,
 // runs the cross-check, and loops until the human approves.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { runClaude } from "../runner.ts";
 import { assemblePlanningPrompt, assembleCrossCheckPrompt } from "../prompt.ts";
@@ -46,11 +46,21 @@ export async function runPlanning(
       io.warn(`Planning session exited with code ${planResult.exitCode}`);
     }
 
-    // Check if plan was written
+    // Check if plan was written to file; if not, capture stdout as the plan
     const planPath = resolve(config.sessionDir, "plan.md");
+    if (!existsSync(config.sessionDir)) {
+      mkdirSync(config.sessionDir, { recursive: true });
+    }
+
     if (!existsSync(planPath)) {
-      io.warn("No plan.md was written. The AI may have produced the plan in its output instead.");
-      io.warn("Continuing to cross-check with available output...");
+      if (planResult.stdout.trim()) {
+        io.status("AI produced plan in stdout. Writing to session/plan.md...");
+        writeFileSync(planPath, planResult.stdout);
+        io.success("Plan captured from stdout and written to session/plan.md");
+      } else {
+        io.warn("No plan output detected. The AI may have failed to produce a plan.");
+        io.warn("Check stderr or try again.");
+      }
     } else {
       io.success("Plan written to session/plan.md");
     }

@@ -3,6 +3,10 @@
 // Spawns Claude CLI processes and collects their output.
 // Each invocation is a fresh context — no state carries over
 // except through files.
+//
+// The system prompt and user prompt are combined into a single
+// message piped via stdin. This avoids OS argument length limits
+// that --system-prompt would hit with large framework files.
 
 import type { ClaudeInvocation } from "./types.ts";
 
@@ -17,11 +21,19 @@ export interface RunResult {
  *
  * Uses `claude -p` (print mode) which gives the AI full tool access
  * (Bash, Edit, Read, Write) while running to completion and exiting.
+ *
+ * System prompt and user prompt are combined and piped via stdin
+ * to avoid OS argument length limits.
  */
 export async function runClaude(
   invocation: ClaudeInvocation
 ): Promise<RunResult> {
   const args = buildArgs(invocation);
+
+  // Combine system context and user prompt into one piped message
+  const fullPrompt = invocation.systemPrompt
+    ? `${invocation.systemPrompt}\n\n---\n\n${invocation.userPrompt}`
+    : invocation.userPrompt;
 
   const proc = Bun.spawn(["claude", ...args], {
     cwd: invocation.workingDir,
@@ -31,8 +43,8 @@ export async function runClaude(
     env: { ...process.env },
   });
 
-  // Send the user prompt via stdin
-  proc.stdin.write(invocation.userPrompt);
+  // Pipe the combined prompt via stdin
+  proc.stdin.write(fullPrompt);
   proc.stdin.end();
 
   // Stream stdout to terminal while collecting it
@@ -66,10 +78,8 @@ export async function runClaude(
 function buildArgs(invocation: ClaudeInvocation): string[] {
   const args: string[] = ["-p"];
 
-  // System prompt
-  if (invocation.systemPrompt) {
-    args.push("--system-prompt", invocation.systemPrompt);
-  }
+  // No --system-prompt flag — system context is piped via stdin
+  // combined with the user prompt to avoid argument length limits
 
   // Model selection
   if (invocation.model) {
