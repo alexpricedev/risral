@@ -1,6 +1,6 @@
 // RISRAL Orchestrator — Core Types
 
-export type Phase = "planning" | "crosscheck" | "execution" | "review";
+export type Phase = "planning" | "crosscheck" | "execution" | "review" | "complete";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "failed";
 

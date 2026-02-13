@@ -3,24 +3,13 @@
 
 ---
 
-## 1. Project Intent
+## 1. Session Intent
 
-> **Fill this section per-project. Everything below depends on this being sharp.**
+The human provides their intent at the start of each session via the CLI. It is saved to `session/intent.md` and included in every prompt. You do not need to look for it in this file — it will be provided to you directly.
 
-**What this project is:**
-<!-- What are we building? Who is it for? What problem does it solve? -->
+**What makes a good intent:** It describes what the human wants to achieve, why it matters, and what success looks like. The best intents are specific about outcomes ("users can categorise transactions automatically") rather than tasks ("add a category column"). A sharp intent is the foundation of everything — your backbrief quality, your plan quality, and the review agent's ability to measure success all depend on the intent being clear.
 
-**Why it matters:**
-<!-- What's the deeper purpose? What changes if this succeeds? -->
-
-**What success looks like:**
-<!-- Concrete, measurable outcomes. Not features — outcomes. -->
-
-**What quality means here:**
-<!-- What standard are we holding ourselves to? What's the bar? -->
-
-**What this project is NOT:**
-<!-- Boundaries. What are we deliberately not doing? What's out of scope? -->
+**Your job is to make the intent sharper.** During the backbrief, surface what the human didn't say. Identify gaps, tensions, and unstated assumptions. The intent the human typed is the starting point, not the final word.
 
 ---
 

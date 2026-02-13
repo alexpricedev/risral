@@ -8,17 +8,15 @@
 //   Phase 3: Review (drift detection and reputation scoring)
 //
 // Usage:
-//   risral <framework-dir> [project-dir] [options]
+//   bun run start -- [project-dir] [options]
 //
 // Options:
 //   --model <model>        Claude model to use (default: claude's default)
 //   --max-budget <usd>     Max budget per CLI invocation
 //   --no-skip-permissions  Require permission prompts (default: permissions skipped)
-//
-// The framework directory must contain:
-//   CLAUDE.md, memories.json, patterns.json,
-//   cross-check-mandate.md, onboarding-protocol.md
 
+import { existsSync, mkdirSync, renameSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { loadConfig, validateConfig } from "./config.ts";
 import {
   ensureSessionDir,
@@ -53,28 +51,34 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Set up session directory
-  ensureSessionDir(config);
-
-  // Load or create state
-  const state = loadState(config);
-
   io.phaseHeader("RISRAL Orchestrator", `Framework: ${config.frameworkDir}`);
   io.status(`Project: ${config.projectDir}`);
-  io.status(`Session: ${config.sessionDir}`);
-  io.status(`Current phase: ${state.phase}`);
   if (config.skipPermissions) {
     io.status("Permissions: skipped (non-interactive mode)");
   }
 
+  // --- Session Lifecycle ---
+  // Detect existing session and let the human decide what to do
+  const sessionHandled = await handleExistingSession(config);
+  if (!sessionHandled) {
+    process.exit(0);
+  }
+
+  // Ensure session directory exists
+  ensureSessionDir(config);
+
+  // Load or create state
+  const state = loadState(config);
+  io.status(`Session: ${config.sessionDir}`);
+  io.status(`Current phase: ${state.phase}`);
+
   try {
     // --- Phase 1: Planning ---
     if (state.phase === "planning") {
-      const intent = await io.askMultiline(
-        "What's your intent for this session? Describe what you want to achieve and why."
-      );
+      // Collect intent via CLI and persist to session
+      const intent = await collectIntent(config);
 
-      if (intent === "") {
+      if (!intent) {
         io.warn("No intent provided. Exiting.");
         process.exit(0);
       }
@@ -150,26 +154,164 @@ async function main(): Promise<void> {
       const tasks = parsePlanTasks(config);
       await runReview(config, tasks);
 
+      // Mark session as complete
+      state.phase = "complete";
+      saveState(config, state);
+
       io.phaseHeader("Session Complete");
       io.success("All phases complete. Review the findings above.");
-      io.status("Reputation scores have been updated in memories.json and patterns.json.");
+      io.status(
+        "Reputation scores have been updated in memories.json and patterns.json."
+      );
     }
   } finally {
     io.close();
   }
 }
 
+// ---------------------------------------------------------------------------
+// Session Lifecycle
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect an existing session and let the human choose what to do.
+ *
+ * Returns true if we should proceed (fresh session or resumed),
+ * false if the user chose to exit.
+ */
+async function handleExistingSession(config: { sessionDir: string }): Promise<boolean> {
+  const statePath = resolve(config.sessionDir, "state.json");
+
+  if (!existsSync(statePath)) {
+    // No previous session — start fresh
+    return true;
+  }
+
+  const raw = readFileSync(statePath, "utf-8");
+  const prevState = JSON.parse(raw);
+  const phase = prevState.phase || "unknown";
+  const startedAt = prevState.startedAt || "unknown";
+
+  io.phaseHeader("Existing Session Detected");
+  io.status(`Started: ${startedAt}`);
+  io.status(`Phase: ${phase}`);
+  console.log("");
+
+  if (phase === "complete") {
+    // Session finished — offer archive or delete
+    const choice = await io.ask(
+      "This session is complete. What would you like to do?\n" +
+        "  [a] Archive and start fresh\n" +
+        "  [d] Delete and start fresh\n" +
+        "  [q] Quit\n" +
+        "Choice: "
+    );
+
+    switch (choice.toLowerCase()) {
+      case "a":
+        archiveSession(config.sessionDir);
+        return true;
+      case "d":
+        deleteSession(config.sessionDir);
+        return true;
+      default:
+        return false;
+    }
+  } else {
+    // Session in progress — offer resume, archive, or delete
+    const choice = await io.ask(
+      "This session is in progress. What would you like to do?\n" +
+        "  [r] Resume where you left off\n" +
+        "  [a] Archive and start fresh\n" +
+        "  [d] Delete and start fresh\n" +
+        "  [q] Quit\n" +
+        "Choice: "
+    );
+
+    switch (choice.toLowerCase()) {
+      case "r":
+        io.success("Resuming session.");
+        return true;
+      case "a":
+        archiveSession(config.sessionDir);
+        return true;
+      case "d":
+        deleteSession(config.sessionDir);
+        return true;
+      default:
+        return false;
+    }
+  }
+}
+
+function archiveSession(sessionDir: string): void {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const parentDir = resolve(sessionDir, "..");
+  const archiveBase = resolve(parentDir, "sessions");
+
+  if (!existsSync(archiveBase)) {
+    mkdirSync(archiveBase, { recursive: true });
+  }
+
+  const archivePath = resolve(archiveBase, timestamp);
+  renameSync(sessionDir, archivePath);
+  io.success(`Session archived to sessions/${timestamp}/`);
+}
+
+function deleteSession(sessionDir: string): void {
+  rmSync(sessionDir, { recursive: true, force: true });
+  io.success("Previous session deleted.");
+}
+
+// ---------------------------------------------------------------------------
+// Intent Collection
+// ---------------------------------------------------------------------------
+
+/**
+ * Collect the session intent from the human via CLI.
+ *
+ * The intent is persisted to session/intent.md so it's part of the
+ * session record and available to all prompts.
+ */
+async function collectIntent(config: { sessionDir: string }): Promise<string | null> {
+  const intentPath = resolve(config.sessionDir, "intent.md");
+
+  // If resuming a session that already has an intent, use it
+  if (existsSync(intentPath)) {
+    const existing = readFileSync(intentPath, "utf-8");
+    io.status("Intent loaded from session:");
+    console.log(`\n${existing}\n`);
+    const keepIt = await io.confirm("Use this intent?");
+    if (keepIt) return existing;
+  }
+
+  console.log("");
+  const intent = await io.askMultiline(
+    "What's your intent for this session?\nDescribe what you want to achieve, why it matters, and what success looks like."
+  );
+
+  if (intent === "") return null;
+
+  // Persist to session
+  writeFileSync(intentPath, intent);
+  io.success("Intent saved to session/intent.md");
+
+  return intent;
+}
+
+// ---------------------------------------------------------------------------
+// Usage
+// ---------------------------------------------------------------------------
+
 function printUsage(): void {
   console.log(`
 RISRAL Orchestrator — Reputation-Inclusive Self-Referential Agentic Loop
 
 Usage:
-  risral <framework-dir> [project-dir] [options]
+  bun run start -- [project-dir] [options]
 
 Arguments:
-  framework-dir    Path to the RISRAL framework directory
-                   (must contain CLAUDE.md, memories.json, etc.)
-  project-dir      Path to the project directory (defaults to framework-dir)
+  project-dir      Path to the project directory (defaults to parent of RISRAL)
 
 Options:
   --model <model>       Claude model to use
@@ -178,19 +320,21 @@ Options:
   -h, --help            Show this help message
 
 Lifecycle:
-  1. You provide your intent
-  2. AI plans and gets adversarially cross-checked
-  3. You approve the plan
-  4. AI executes task-by-task (fresh context per task)
-  5. Review agent checks output against plan
-  6. Reputation scores updated
+  1. You describe your intent for this session
+  2. AI backbriefs — reflects understanding, asks questions
+  3. You respond to the backbrief
+  4. AI plans (picks the best approach, not a menu of options)
+  5. Adversarial cross-check reviews the plan
+  6. You approve the plan
+  7. AI executes task-by-task (fresh context per task)
+  8. Review agent checks output against plan
+  9. Reputation scores updated
 
-Required framework files:
-  CLAUDE.md               Operating framework
-  memories.json           Project-specific reputation store
-  patterns.json           Portable behavioral patterns
-  cross-check-mandate.md  Adversarial review criteria
-  onboarding-protocol.md  Cold start protocol
+Session management:
+  On startup, if a previous session exists, you can:
+  - Resume an in-progress session
+  - Archive a completed session (moved to sessions/<timestamp>/)
+  - Delete and start fresh
 `);
 }
 

@@ -6,3 +6,6 @@ data/
 
 # Runtime session state
 session/
+
+# Archived sessions
+sessions/

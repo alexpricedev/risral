@@ -15,12 +15,9 @@ git clone <risral-repo> .risral
 
 # Set up
 cd .risral
-bun install
 bun run init
 
-# Fill in your project intent in framework/CLAUDE.md
-
-# Run a session
+# Run a session — the CLI will ask for your intent
 bun run start -- ../
 ```
 
@@ -30,7 +27,9 @@ bun run start -- ../
 
 ### Three-Phase Operating Model
 
-**Phase 1 — Intent Alignment.** The human defines what success looks like, not how to get there. The AI backbriefs — reflecting understanding, surfacing assumptions, identifying gaps. An adversarial cross-check sub-agent reviews the AI's planning reasoning and updates its reputation scores. The loop continues until the human approves the plan. This is the only phase where the AI asks questions.
+**Phase 1a — Backbrief.** The human describes their intent via the CLI. The AI backbriefs — reflecting understanding, surfacing assumptions, identifying gaps, and asking every question it needs answered. The human reviews the backbrief and responds. This is the only interactive checkpoint.
+
+**Phase 1b — Planning.** The AI takes the human's feedback, explores approaches internally, and picks the best one. It does not present a menu of options — that's deferral, not engineering. An adversarial cross-check sub-agent reviews the planning reasoning and updates reputation scores. The loop continues until the human approves the plan.
 
 **Phase 2 — Execution.** Once the plan is approved, the AI has full autonomy. It does not return to the human for clarification. It does not defer. It does not worry about how long things take. Each task runs in a fresh CLI session with the framework fully salient — context resets prevent the operating rules from degrading over long sessions.
 
@@ -60,7 +59,7 @@ An adversarial sub-agent that reviews planning output on six dimensions: explora
 ```
 .risral/
   framework/                  — The RISRAL framework (versioned)
-    CLAUDE.md                 — Operating framework, intent section, three-phase model
+    CLAUDE.md                 — Operating framework and three-phase model
     cross-check-mandate.md    — Adversarial agent's review criteria
     onboarding-protocol.md    — Cold start protocol
   data/                       — Project-specific data (gitignored)
@@ -75,12 +74,13 @@ An adversarial sub-agent that reviews planning output on six dimensions: explora
     io.ts                     — Terminal I/O for human checkpoints
     types.ts                  — Shared TypeScript types
     phases/
-      planning.ts             — Phase 1 + cross-check loop
+      planning.ts             — Phase 1a backbrief + 1b planning + cross-check loop
       execution.ts            — Phase 2, task-by-task with context resets
       review.ts               — Phase 3, drift detection
   bin/
     init.ts                   — Project setup script
-  session/                    — Runtime state (gitignored)
+  session/                    — Current session state (gitignored)
+  sessions/                   — Archived past sessions (gitignored)
   package.json
   README.md
 ```
@@ -94,14 +94,16 @@ An adversarial sub-agent that reviews planning output on six dimensions: explora
 bun run start -- /path/to/project
 
 # With options
-bun run start -- /path/to/project --model opus --skip-permissions --max-budget 5
+bun run start -- /path/to/project --model opus --max-budget 5
 ```
 
 **Options:**
 
 - `--model <model>` — Claude model to use (e.g., `opus`, `sonnet`)
 - `--max-budget <usd>` — Maximum budget per CLI invocation in USD
-- `--skip-permissions` — Bypass tool permission checks (for sandboxed environments)
+- `--no-skip-permissions` — Require tool permission prompts (default: auto-skipped for non-interactive mode)
+
+**Session management:** On startup, if a previous session exists, the orchestrator will ask whether to resume, archive, or delete it. Archived sessions are saved to `sessions/<timestamp>/`.
 
 ---
 
