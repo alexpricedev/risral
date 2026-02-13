@@ -1,1 +1,8 @@
 .DS_Store
+node_modules/
+
+# Project-specific data (created by init, not part of the template)
+data/
+
+# Runtime session state
+session/

@@ -6,15 +6,23 @@ A framework for AI-human collaboration that addresses the gap between AI capabil
 
 ---
 
-## The Problem
+## Quick Start
 
-AI models are O-shaped — vast knowledge across every domain, no experiential filter. Humans are T-shaped — deep in one or two domains, shaped by decades of consequences. When they collaborate, both sides default to patterns that don't work:
+```bash
+# Clone into your project
+cd your-project
+git clone <risral-repo> .risral
 
-- **Humans give instructions when they should define intent.** The more precisely a human specifies *how*, the more faithfully the AI executes — even when the *how* is wrong.
-- **AI inherits human economics.** It commits early (as if exploring were expensive), defers fixes (as if deferral saved effort), and projects false confidence (as if reputation were at stake). For an AI, none of these constraints apply.
-- **AI has no reputation.** Every session starts at zero. There's no accumulated consequence for being wrong, no scar tissue from past mistakes, no calibrated carefulness built over time.
+# Set up
+cd .risral
+bun install
+bun run init
 
-RISRAL creates a synthetic reputation system and an operating model that overrides these defaults.
+# Fill in your project intent in framework/CLAUDE.md
+
+# Run a session
+bun run start -- ../
+```
 
 ---
 
@@ -24,7 +32,7 @@ RISRAL creates a synthetic reputation system and an operating model that overrid
 
 **Phase 1 — Intent Alignment.** The human defines what success looks like, not how to get there. The AI backbriefs — reflecting understanding, surfacing assumptions, identifying gaps. An adversarial cross-check sub-agent reviews the AI's planning reasoning and updates its reputation scores. The loop continues until the human approves the plan. This is the only phase where the AI asks questions.
 
-**Phase 2 — Execution.** Once the plan is approved, the AI has full autonomy. It does not return to the human for clarification. It does not defer. It does not worry about how long things take. It orchestrates sub-agents as needed and executes until the success criteria are met.
+**Phase 2 — Execution.** Once the plan is approved, the AI has full autonomy. It does not return to the human for clarification. It does not defer. It does not worry about how long things take. Each task runs in a fresh CLI session with the framework fully salient — context resets prevent the operating rules from degrading over long sessions.
 
 **Phase 3 — Review.** A review sub-agent maps output against the plan. Every divergence is captured — what was planned, what was built, and whether the deviation was justified. Justified deviations become learnings. Unjustified drift becomes a reputation hit. Findings go to the human alongside the deliverable.
 
@@ -32,31 +40,68 @@ RISRAL creates a synthetic reputation system and an operating model that overrid
 
 Two-tier memory store:
 
-- **Project-specific memories** (`memories.json`) — observations, decisions, false beliefs, and drift events from this project. Scored by confidence, reinforcement count, and recency.
-- **Portable patterns** (`patterns.json`) — behavioral tendencies that apply across projects. "AI tends to commit to first approach without exploring" is a portable pattern. "The auth module cascades when touched" is a project memory.
+- **Project-specific memories** (`data/memories.json`) — observations, decisions, false beliefs, and drift events from this project. Scored by confidence, reinforcement count, and recency.
+- **Portable patterns** (`data/patterns.json`) — behavioral tendencies that apply across projects. "AI tends to commit to first approach without exploring" is a portable pattern. "The auth module cascades when touched" is a project memory.
 
 Memories are scored, reinforced, decayed, and deprecated over time. False beliefs carry 2x weight — the AI's past confident mistakes are the most important things to remember.
 
+### Context Reset Engine
+
+The orchestrator solves the problem of framework instructions losing salience in long sessions. Instead of fighting context degradation, it embraces it — each task runs in a fresh Claude CLI session with the framework files injected at the top. The memory files bridge state between sessions. The AI never runs long enough for the rules to fade.
+
 ### Cross-Check Agent
 
-An adversarial sub-agent that reviews planning output on six dimensions: exploration depth, backbrief quality, uncertainty calibration, memory integration, deferral detection, and success criteria concreteness. It has direct authority to update reputation scores. The primary agent knows it's being judged.
-
-### Cold Start
-
-When memories are empty, RISRAL runs an onboarding protocol — like a senior engineer's first week at a new company. Explore, ask, understand, produce initial observations for human review. No building until context is established.
+An adversarial sub-agent that reviews planning output on six dimensions: exploration depth, backbrief quality, uncertainty calibration, memory integration, deferral detection, and success criteria concreteness. It runs in its own independent CLI session — separate context, separate system prompt. It has direct authority to update reputation scores. The primary agent knows it's being judged.
 
 ---
 
-## File Structure
+## Project Structure
 
 ```
-CLAUDE.md                 — Operating framework (the core of the system)
-memories.json             — Project-specific reputation store
-patterns.json             — Portable behavioral patterns
-cross-check-mandate.md    — Adversarial agent's review criteria
-onboarding-protocol.md    — Cold start protocol
-README.md                 — This file
+.risral/
+  framework/                  — The RISRAL framework (versioned)
+    CLAUDE.md                 — Operating framework, intent section, three-phase model
+    cross-check-mandate.md    — Adversarial agent's review criteria
+    onboarding-protocol.md    — Cold start protocol
+  data/                       — Project-specific data (gitignored)
+    memories.json             — Reputation store
+    patterns.json             — Portable behavioral patterns
+  orchestrator/               — The engine that runs the framework
+    index.ts                  — CLI entry point and lifecycle management
+    config.ts                 — Configuration and validation
+    prompt.ts                 — Phase-specific prompt assembly
+    runner.ts                 — Claude CLI subprocess management
+    state.ts                  — State persistence and task parsing
+    io.ts                     — Terminal I/O for human checkpoints
+    types.ts                  — Shared TypeScript types
+    phases/
+      planning.ts             — Phase 1 + cross-check loop
+      execution.ts            — Phase 2, task-by-task with context resets
+      review.ts               — Phase 3, drift detection
+  bin/
+    init.ts                   — Project setup script
+  session/                    — Runtime state (gitignored)
+  package.json
+  README.md
 ```
+
+---
+
+## CLI Usage
+
+```bash
+# Basic usage — point at your project directory
+bun run start -- /path/to/project
+
+# With options
+bun run start -- /path/to/project --model opus --skip-permissions --max-budget 5
+```
+
+**Options:**
+
+- `--model <model>` — Claude model to use (e.g., `opus`, `sonnet`)
+- `--max-budget <usd>` — Maximum budget per CLI invocation in USD
+- `--skip-permissions` — Bypass tool permission checks (for sandboxed environments)
 
 ---
 
@@ -71,13 +116,10 @@ RISRAL draws on several converging ideas:
 
 ---
 
-## Usage
+## Requirements
 
-1. Copy this framework into your project
-2. Fill in the Project Intent section of `CLAUDE.md`
-3. Start a session — the AI reads the framework and enters onboarding if memories are empty
-4. Work through the three phases: align intent, execute autonomously, review against the plan
-5. Reputation accumulates across sessions through the memory stores
+- [Bun](https://bun.sh) runtime
+- [Claude CLI](https://docs.claude.com) installed and authenticated
 
 ---
 
