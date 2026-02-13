@@ -73,27 +73,61 @@ export function parsePlanTasks(config: RisralConfig): Task[] {
   const plan = readFileSync(planPath, "utf-8");
   const tasks: Task[] = [];
 
-  // Find the ## Tasks section
-  const tasksMatch = plan.match(/## Tasks\s*\n([\s\S]*?)(?=\n## |\n---|\Z)/);
+  // Find the ## Tasks section (capture everything after "## Tasks" until next
+  // same-level heading, a horizontal rule, or end of string)
+  const tasksMatch = plan.match(/## Tasks\s*\n([\s\S]*?)(?=\n## [^#]|\n---|\s*$)/);
   if (!tasksMatch) return [];
 
   const tasksSection = tasksMatch[1];
 
-  // Parse numbered items: "1. **Title** — Description" or "1. Title\nDescription"
-  const taskPattern =
+  // Strategy 1: "### N. Title" (sub-heading style, as seen in real plans)
+  // Capture title from the heading line and description from the body below it
+  const headingPattern = /###\s*(\d+)\.\s+(.+)/g;
+  let headingMatch;
+  const headingPositions: { index: number; num: number; title: string; pos: number }[] = [];
+
+  while ((headingMatch = headingPattern.exec(tasksSection)) !== null) {
+    headingPositions.push({
+      index: headingPositions.length,
+      num: parseInt(headingMatch[1], 10),
+      title: headingMatch[2].trim().replace(/\*\*/g, "").replace(/`/g, ""),
+      pos: headingMatch.index + headingMatch[0].length,
+    });
+  }
+
+  if (headingPositions.length > 0) {
+    for (let i = 0; i < headingPositions.length; i++) {
+      const start = headingPositions[i].pos;
+      const end = i + 1 < headingPositions.length
+        ? tasksSection.lastIndexOf("###", headingPositions[i + 1].pos)
+        : tasksSection.length;
+      const description = tasksSection.slice(start, end).trim();
+
+      tasks.push({
+        index: tasks.length,
+        title: headingPositions[i].title,
+        description: description || headingPositions[i].title,
+        status: "pending",
+      });
+    }
+    return tasks;
+  }
+
+  // Strategy 2: "N. **Title** — Description" or "N. Title" (inline style)
+  const inlinePattern =
     /(?:^|\n)\s*(\d+)\.\s+\*{0,2}(.+?)\*{0,2}\s*(?:[—\-:]\s*)?(.+?)(?=\n\s*\d+\.|\n\s*$|$)/gs;
 
-  let match;
-  while ((match = taskPattern.exec(tasksSection)) !== null) {
+  let inlineMatch;
+  while ((inlineMatch = inlinePattern.exec(tasksSection)) !== null) {
     tasks.push({
       index: tasks.length,
-      title: match[2].trim(),
-      description: match[3].trim(),
+      title: inlineMatch[2].trim(),
+      description: inlineMatch[3].trim(),
       status: "pending",
     });
   }
 
-  // Fallback: if regex didn't catch tasks, try simpler line-by-line
+  // Strategy 3: Simplest fallback — any line starting with a number and dot
   if (tasks.length === 0) {
     const lines = tasksSection.split("\n");
     for (const line of lines) {
