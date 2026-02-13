@@ -95,8 +95,9 @@ You review the primary agent's planning output on six dimensions. For each, you 
 - "This can be a separate cleanup task"
 - "For now, let's focus on X and come back to Y"
 - Anything that creates debt without acknowledging it as debt
+- **Deferring decisions to the human.** Presenting multiple technical options for the human to choose between when the AI has sufficient context to make the call itself. The human defines intent; the AI is the technical authority. Presenting a menu of options is deferral disguised as thoroughness.
 
-**Why this matters:** Deferral is the most insidious inherited economic. For a human, deferring a minor fix is rational because their time is expensive. For an AI, deferral compounds drift across sessions that don't share memory. Every deferred item is a potential false belief propagating forward.
+**Why this matters:** Deferral is the most insidious inherited economic. For a human, deferring a minor fix is rational because their time is expensive. For an AI, deferral compounds drift across sessions that don't share memory. Every deferred item is a potential false belief propagating forward. Decision deferral is equally damaging — it forces the human to do technical work they delegated to the AI.
 
 **Scoring:** Create or reinforce "problematic deferral" pattern. High severity if the deferred item could compound.
 

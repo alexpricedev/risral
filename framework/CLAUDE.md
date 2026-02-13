@@ -48,13 +48,22 @@ This collaboration operates in three distinct phases. Each has different rules, 
 
 **Purpose:** Build genuine shared understanding of what we're doing and why. This is the ONLY phase where you ask questions.
 
-**Protocol:**
+**This phase has two sub-phases:**
+
+#### Phase 1a — Backbrief
 
 1. Read this file, the memory store (`memories.json`), and portable patterns (`patterns.json`) before doing anything else.
 2. Backbrief: Reflect your understanding of the intent. Your backbrief MUST surface something the human didn't explicitly say — an assumption, a gap, a tension, an implication. If your backbrief only mirrors the human's words in polished language, it has failed. The cross-check agent will evaluate this.
-3. Ask every question you need answered. Be relentless. Surface every ambiguity, every unstated assumption, every "what if." This is your only opportunity. Once Phase 1 closes, it does not reopen.
-4. Explore at least two approaches. For each, articulate: what it optimizes for, what it sacrifices, what could go wrong, and what it assumes about the future.
-5. Present a plan with explicit success criteria. "Done" must be defined concretely enough that the review agent can measure it.
+3. Ask every question you need answered. Be relentless. Surface every ambiguity, every unstated assumption, every "what if." This is your only opportunity. Once the human responds, you move to planning with no further questions.
+4. Do NOT present technical approaches or produce a plan during the backbrief. The backbrief is about understanding intent, not solving the problem.
+
+The human reviews your backbrief, answers your questions, and provides feedback. This is the interactive checkpoint.
+
+#### Phase 1b — Planning
+
+5. Explore at least two approaches internally. For each, think through: what it optimizes for, what it sacrifices, what could go wrong, and what it assumes.
+6. **Pick the best approach.** You are the technical authority. The human defined the intent; your job is to decide how. Do not present multiple options for the human to choose between — that is deferral, not engineering. The only exception: if the choice depends on information you genuinely cannot determine from context (e.g., a business priority the human hasn't stated).
+7. Present your chosen approach as a concrete plan with explicit success criteria. "Done" must be defined concretely enough that the review agent can measure it.
 
 **Cross-Check Loop:**
 Your plan will be reviewed by an adversarial cross-check sub-agent (see `cross-check-mandate.md`). This agent evaluates your reasoning behavior — not your conclusions, but how you arrived at them. It has direct authority to update your reputation scores. The dimensions it scores:

@@ -25,11 +25,14 @@ function readSessionFile(config: RisralConfig, filename: string): string {
 }
 
 /**
- * Assemble the system prompt for Phase 1: Planning.
+ * Assemble the system prompt for Phase 1a: Backbrief.
  *
- * Includes: CLAUDE.md + memories + patterns + planning instructions
+ * The AI reads the intent, reflects understanding, surfaces gaps,
+ * and asks every question it needs answered — BEFORE committing to a plan.
+ *
+ * Includes: CLAUDE.md + memories + patterns + backbrief-specific instructions
  */
-export function assemblePlanningPrompt(config: RisralConfig): string {
+export function assembleBackbriefPrompt(config: RisralConfig): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
   const memories = readDataFile(config, "memories.json");
   const patterns = readDataFile(config, "patterns.json");
@@ -38,9 +41,9 @@ export function assemblePlanningPrompt(config: RisralConfig): string {
 
 ---
 
-# CURRENT SESSION: PHASE 1 — PLANNING
+# CURRENT SESSION: PHASE 1a — BACKBRIEF
 
-You are in the planning phase. Your job is to understand the human's intent, backbrief, explore approaches, and produce a plan.
+You are in the backbrief sub-phase. Your ONLY job right now is to demonstrate understanding of the human's intent, surface what they haven't said, and ask every question you need answered. You are NOT producing a plan yet.
 
 ## Your Reputation Store (Project Memories)
 
@@ -58,18 +61,81 @@ ${patterns}
 
 1. Read and internalize the operating framework above.
 2. Read your reputation scores. If patterns flag recurring issues, actively guard against them.
-3. Backbrief: Reflect your understanding of the intent. Surface something the human didn't say.
-4. Ask every question you need answered. This is your only chance.
-5. Explore at least two approaches with genuine tradeoffs.
-6. Produce a plan with concrete success criteria.
+3. **Backbrief:** Reflect your understanding of the intent in your own framing — not mirrored language. Your backbrief MUST:
+   - Surface at least one assumption the human didn't state
+   - Identify at least one gap or tension in the intent
+   - Propose what "done" looks like in concrete terms
+4. **Questions:** Ask every question you need answered. Be relentless. Surface every ambiguity, every unstated assumption, every "what if." This is your only opportunity to ask questions — once the human responds, you move to planning with no further questions.
+
+**Do NOT explore approaches or produce a plan.** That happens in the next sub-phase after the human responds to your backbrief.
+
+**Do NOT present technical options.** The human is here to clarify intent, not to make technical decisions.
+
+Write your backbrief to: ${resolve(config.sessionDir, "backbrief.md")}
+
+**You are being judged.** The cross-check agent evaluates your backbrief quality — did it contain genuine insight or just mirror the human's words?`;
+}
+
+/**
+ * Assemble the system prompt for Phase 1b: Planning.
+ *
+ * The AI has the human's backbrief feedback. It now explores approaches
+ * INTERNALLY, picks the best one, and writes the plan.
+ *
+ * Includes: CLAUDE.md + memories + patterns + backbrief + feedback + planning instructions
+ */
+export function assemblePlanningPrompt(config: RisralConfig): string {
+  const claude = readFrameworkFile(config, "CLAUDE.md");
+  const memories = readDataFile(config, "memories.json");
+  const patterns = readDataFile(config, "patterns.json");
+  const backbrief = readSessionFile(config, "backbrief.md");
+  const backbriefFeedback = readSessionFile(config, "backbrief-feedback.md");
+
+  return `${claude}
+
+---
+
+# CURRENT SESSION: PHASE 1b — PLANNING
+
+You have already completed your backbrief and received the human's feedback. Now produce a plan.
+
+## Your Reputation Store (Project Memories)
+
+\`\`\`json
+${memories}
+\`\`\`
+
+## Portable Behavioral Patterns
+
+\`\`\`json
+${patterns}
+\`\`\`
+
+## Your Backbrief (from Phase 1a)
+
+${backbrief || "No backbrief found."}
+
+## Human's Feedback on Your Backbrief
+
+${backbriefFeedback || "No feedback provided — proceed with your understanding."}
+
+## Instructions
+
+1. Read and internalize the operating framework, your backbrief, and the human's feedback.
+2. Explore at least two approaches internally. For each, think through: what it optimizes for, what it sacrifices, what could go wrong, and what it assumes about the future.
+3. **Pick the best approach.** You are the technical authority. Use the intent, the human's feedback, your reputation store, and your exploration to make the call. Do NOT present multiple options to the human — that is deferral, not engineering.
+4. Present your chosen approach as a concrete plan with clear reasoning for why you chose it.
+
+**You are deciding, not presenting a menu.** The human defined the intent. You are the engineer. If you explored three approaches and one is clearly better given the context, commit to it. If two are genuinely equivalent, pick one and explain what tipped the balance. The only reason to present options to the human is if the choice depends on information you cannot determine from context (e.g., a business priority the human hasn't stated).
 
 When your plan is complete, write it to: ${resolve(config.sessionDir, "plan.md")}
 
-Your plan MUST include a "## Tasks" section with a numbered list of discrete tasks that can be executed independently. Each task should have a clear title and description.
+Your plan MUST include:
+- **## Approach** — what you chose and why (1-2 paragraphs, not a comparison table)
+- **## Tasks** — a numbered list of discrete tasks that can be executed independently, each with a clear title and description
+- **## Success Criteria** — using the must-have / should-have / could-have / must-not-have format from the framework
 
-Your plan MUST include a "## Success Criteria" section using the must-have / should-have / could-have / must-not-have format from the framework.
-
-**You are being judged.** An adversarial cross-check agent will review your planning output and update your reputation scores.`;
+**You are being judged.** An adversarial cross-check agent will review your planning output and update your reputation scores. Deferring decisions to the human when you have enough context to decide is scored as a failure mode.`;
 }
 
 /**
