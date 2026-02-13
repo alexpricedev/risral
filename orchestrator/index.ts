@@ -13,7 +13,7 @@
 // Options:
 //   --model <model>        Claude model to use (default: claude's default)
 //   --max-budget <usd>     Max budget per CLI invocation
-//   --skip-permissions     Bypass permission checks (sandboxed environments)
+//   --no-skip-permissions  Require permission prompts (default: permissions skipped)
 //
 // The framework directory must contain:
 //   CLAUDE.md, memories.json, patterns.json,
@@ -63,6 +63,9 @@ async function main(): Promise<void> {
   io.status(`Project: ${config.projectDir}`);
   io.status(`Session: ${config.sessionDir}`);
   io.status(`Current phase: ${state.phase}`);
+  if (config.skipPermissions) {
+    io.status("Permissions: skipped (non-interactive mode)");
+  }
 
   try {
     // --- Phase 1: Planning ---
@@ -171,7 +174,7 @@ Arguments:
 Options:
   --model <model>       Claude model to use
   --max-budget <usd>    Maximum budget per CLI invocation in USD
-  --skip-permissions    Bypass permission checks (sandboxed environments only)
+  --no-skip-permissions Require permission prompts (default: auto-skipped for -p mode)
   -h, --help            Show this help message
 
 Lifecycle:

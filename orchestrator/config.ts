@@ -32,6 +32,12 @@ export function loadConfig(args: string[]): RisralConfig {
   const dataDir = resolve(RISRAL_ROOT, "data");
   const sessionDir = resolve(RISRAL_ROOT, "session");
 
+  // Default skipPermissions to true because all CLI invocations run in
+  // non-interactive -p mode — there's no way to answer permission prompts.
+  // Use --no-skip-permissions to override (e.g. if you have a
+  // .claude/settings.json that pre-allows the necessary tools).
+  const skipPermissions = !args.includes("--no-skip-permissions");
+
   return {
     frameworkDir,
     dataDir,
@@ -39,7 +45,7 @@ export function loadConfig(args: string[]): RisralConfig {
     sessionDir,
     model: getArgValue(args, "--model"),
     maxBudgetPerInvocation: getArgNumber(args, "--max-budget"),
-    skipPermissions: args.includes("--skip-permissions"),
+    skipPermissions,
   };
 }
 
