@@ -40,14 +40,18 @@ async function main(): Promise<void> {
   }
 
   const config = loadConfig(remainingArgs);
-  const errors = validateConfig(config);
 
-  if (errors.length > 0) {
-    console.error("Configuration errors:");
-    for (const error of errors) {
-      console.error(`  - ${error}`);
+  // Skip validation for init — it creates the files that validation checks for
+  if (subcommand !== "init") {
+    const errors = validateConfig(config);
+
+    if (errors.length > 0) {
+      console.error("Configuration errors:");
+      for (const error of errors) {
+        console.error(`  - ${error}`);
+      }
+      process.exit(1);
     }
-    process.exit(1);
   }
 
   switch (subcommand) {
