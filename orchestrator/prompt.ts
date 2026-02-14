@@ -1,7 +1,7 @@
 // RISRAL Orchestrator — Prompt Assembly
 //
 // Reads framework files and assembles them into system prompts
-// for planning and cross-check phases.
+// for planning, cross-check, and learn phases.
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -219,5 +219,114 @@ You have authority to create and update memories. Use it precisely.
 - Deprecate rather than delete — set status to "deprecated" and lower confidence
 - On contradiction: new_score = old_score * 0.8
 - On reinforcement: new_score = old_score + 0.1 * (1 - old_score)`;
+}
+
+/**
+ * Feedback collected from the human via the learn command.
+ */
+export interface LearnFeedback {
+  outcome: string;
+  drift: string;
+  falseBeliefs: string;
+}
+
+/**
+ * Assemble the system prompt for the Learn command.
+ *
+ * The AI reads the human's execution feedback and updates the reputation
+ * store (memories.json and patterns.json) accordingly.
+ *
+ * Includes: current memories + patterns + plan context (if available) + feedback
+ */
+export function assembleLearnPrompt(config: RisralConfig, feedback: LearnFeedback): string {
+  const memoriesRaw = readFile(resolve(config.dataDir, "memories.json"));
+  const patternsRaw = readFile(resolve(config.dataDir, "patterns.json"));
+  const projectIntent = readDataFile(config, "project-intent.md");
+  const planOutput = readSessionFile(config, "plan-output.md");
+  const sessionIntent = readSessionFile(config, "intent.md");
+
+  const memoriesPath = resolve(config.dataDir, "memories.json");
+  const patternsPath = resolve(config.dataDir, "patterns.json");
+
+  return `# RISRAL — Learn: Reputation Update from Execution Feedback
+
+You are updating the RISRAL reputation store based on a human operator's report of how plan execution went. The human executed a plan in Claude Code CLI and is now reporting outcomes, drift, and discovered false beliefs.
+
+Your job: read the feedback, compare it against the current reputation store and plan, and make precise updates to memories.json and patterns.json.
+
+## Project Intent
+
+${projectIntent || "No project intent on file."}
+
+## Session Intent
+
+${sessionIntent || "No session intent recorded."}
+
+## Plan That Was Executed
+
+${planOutput || "*No plan output found — the human may be reporting learnings without a session context.*"}
+
+## Human's Execution Feedback
+
+### How did execution go?
+
+${feedback.outcome}
+
+### Did anything drift from the plan?
+
+${feedback.drift || "*No drift reported.*"}
+
+### False beliefs discovered?
+
+${feedback.falseBeliefs || "*None reported.*"}
+
+## Current Reputation Store
+
+### memories.json
+
+\`\`\`json
+${memoriesRaw || "{}"}
+\`\`\`
+
+### patterns.json
+
+\`\`\`json
+${patternsRaw || "{}"}
+\`\`\`
+
+## Instructions
+
+Analyze the human's feedback and update the reputation store:
+
+1. **Drift events**: If the human reports drift from the plan, create a \`drift_event\` memory for each significant divergence. Tag as "justified" or "unjustified" based on the human's explanation.
+
+2. **False beliefs**: If the human reports something the plan assumed that turned out wrong, either:
+   - Create a new \`false_belief\` memory if no existing memory covers it
+   - Reinforce an existing false_belief if it matches (new_score = old_score + 0.1 * (1 - old_score))
+   - Challenge an existing memory that the feedback contradicts (new_score = old_score * 0.8)
+
+3. **Patterns**: If the feedback reveals a behavioral pattern (something the AI did repeatedly, good or bad):
+   - Reinforce existing patterns that match (new_score = old_score + 0.1 * (1 - old_score))
+   - Challenge patterns that the feedback contradicts (new_score = old_score * 0.8)
+   - Create new patterns if the feedback describes a recurring behavior not yet captured
+
+4. **Observations**: Create \`observation\` memories for significant learnings that don't fit the above categories.
+
+5. **Deprecation**: If feedback directly contradicts a memory with new evidence, set its status to "deprecated" and confidence to 0.0 with reasoning explaining why.
+
+**Rules:**
+- Always update \`last_updated\` on both root objects
+- Use ISO 8601 timestamps
+- New memory IDs: find the highest existing mem_NNN / pat_NNN and increment
+- Be selective — only create memories for things that future sessions need to know
+- Do NOT create memories for process quality observations ("the session went well")
+- Do NOT create memories for facts trivially re-discoverable from code
+- Source for all new entries: "human_reported"
+
+Write the updated files to:
+- \`${memoriesPath}\`
+- \`${patternsPath}\`
+
+After writing the files, summarize what you changed: which memories were created/updated/deprecated and which patterns were created/updated/challenged. Be concise.`;
 }
 

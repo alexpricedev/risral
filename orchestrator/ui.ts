@@ -58,15 +58,19 @@ export async function collectIntent(): Promise<string | symbol> {
 
 export async function collectFeedback(
   prompt: string,
+  options?: { required?: boolean },
 ): Promise<string | symbol> {
+  const required = options?.required ?? true;
   return p.text({
     message: prompt,
     placeholder: "Type your response...",
-    validate: (value) => {
-      if (!value || value.trim().length === 0) {
-        return "Please provide a response";
-      }
-    },
+    validate: required
+      ? (value) => {
+          if (!value || value.trim().length === 0) {
+            return "Please provide a response";
+          }
+        }
+      : undefined,
   });
 }
 
