@@ -12,24 +12,21 @@ import {
   readDecisionLog,
   appendDecisionLog,
 } from "../state.ts";
-import * as io from "../io.ts";
+import * as ui from "../ui.ts";
 import type { RisralConfig, Task } from "../types.ts";
 
 export async function runExecution(
   config: RisralConfig,
   tasks: Task[]
 ): Promise<Task[]> {
-  io.phaseHeader(
-    "Phase 2 — Execution",
-    `${tasks.length} tasks to execute`
-  );
+  ui.phaseIntro("Execution", `${tasks.length} tasks to execute`);
 
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
     task.status = "in_progress";
 
-    io.taskHeader(i, tasks.length, task.title);
-    io.status("Launching execution session (fresh context)...");
+    ui.info(`Task ${i + 1}/${tasks.length}: ${task.title}`);
+    ui.startSpinner("Working...");
 
     const decisionLog = readDecisionLog(config);
     const systemPrompt = assembleExecutionPrompt(config, task, decisionLog);
@@ -55,7 +52,8 @@ export async function runExecution(
       appendDecisionLog(config, task.index, task.title, summary);
       task.status = "completed";
       task.completedAt = new Date().toISOString();
-      io.success(`Task ${i + 1} completed`);
+      ui.stopSpinner(`Task ${i + 1} completed`);
+      ui.success(task.title);
     } else {
       // Task may have completed without writing the signal file
       // Record what we have from stdout
@@ -66,24 +64,22 @@ export async function runExecution(
       task.completedAt = new Date().toISOString();
 
       if (result.exitCode === 0) {
-        io.warn(
-          `Task ${i + 1} completed but didn't write completion signal. Recording stdout as decision log.`
-        );
+        ui.stopSpinner(`Task ${i + 1} completed (no summary found)`);
+        ui.warn(task.title);
       } else {
-        io.warn(
-          `Task ${i + 1} exited with code ${result.exitCode}`
-        );
+        ui.stopSpinner(`Task ${i + 1} failed`);
+        ui.error(task.title);
       }
     }
   }
 
-  const completed = tasks.filter((t) => t.status === "completed").length;
-  const failed = tasks.filter((t) => t.status === "failed").length;
+  // Execution summary
+  const summaryLines = tasks.map((t) => {
+    const icon = t.status === "completed" ? "✓" : t.status === "failed" ? "✗" : "?";
+    return `${icon} Task ${t.index + 1}: ${t.title} [${t.status}]`;
+  }).join("\n");
 
-  io.phaseHeader(
-    "Execution Complete",
-    `${completed} completed, ${failed} failed out of ${tasks.length}`
-  );
+  ui.showContent("Execution Summary", summaryLines);
 
   return tasks;
 }
