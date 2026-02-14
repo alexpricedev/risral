@@ -7,7 +7,7 @@
 //       → Cross-check agent reviews
 //       → Human approves or requests revision
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { runClaude } from "../runner.ts";
 import {
@@ -157,7 +157,6 @@ export async function runPlanning(
       }
 
       // Delete old plan so the next iteration starts fresh
-      const { unlinkSync } = await import("node:fs");
       if (existsSync(planPath)) unlinkSync(planPath);
       if (existsSync(crossCheckPath)) unlinkSync(crossCheckPath);
     }

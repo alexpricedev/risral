@@ -23,12 +23,13 @@ import {
   loadState,
   saveState,
   parsePlanTasks,
+  loadTasks,
   saveTasks,
 } from "./state.ts";
 import { runPlanning } from "./phases/planning.ts";
 import { runExecution } from "./phases/execution.ts";
 import { runReview } from "./phases/review.ts";
-import * as io from "./io.ts";
+import * as ui from "./ui.ts";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -51,10 +52,10 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  io.phaseHeader("RISRAL Orchestrator", `Framework: ${config.frameworkDir}`);
-  io.status(`Project: ${config.projectDir}`);
+  ui.intro();
+  ui.info(`Project: ${config.projectDir}`);
   if (config.skipPermissions) {
-    io.status("Permissions: skipped (non-interactive mode)");
+    ui.info("Permissions: skipped (non-interactive mode)");
   }
 
   // --- Session Lifecycle ---
@@ -69,8 +70,8 @@ async function main(): Promise<void> {
 
   // Load or create state
   const state = loadState(config);
-  io.status(`Session: ${config.sessionDir}`);
-  io.status(`Current phase: ${state.phase}`);
+  ui.info(`Session: ${config.sessionDir}`);
+  ui.info(`Current phase: ${state.phase}`);
 
   try {
     // --- Phase 1: Planning ---
@@ -79,14 +80,14 @@ async function main(): Promise<void> {
       const intent = await collectIntent(config);
 
       if (!intent) {
-        io.warn("No intent provided. Exiting.");
+        ui.warn("No intent provided. Exiting.");
         process.exit(0);
       }
 
       const approved = await runPlanning(config, intent);
 
       if (!approved) {
-        io.status("Planning did not result in an approved plan. Exiting.");
+        ui.info("Planning did not result in an approved plan. Exiting.");
         process.exit(0);
       }
 
@@ -94,12 +95,13 @@ async function main(): Promise<void> {
       const tasks = parsePlanTasks(config);
 
       if (tasks.length === 0) {
-        io.warn(
+        ui.warn(
           "Could not parse tasks from plan.md. The plan may not contain a '## Tasks' section with numbered items."
         );
-        const proceed = await io.confirm(
+        const proceed = await ui.confirmAction(
           "Continue to execution without a parsed task list?"
         );
+        ui.handleCancel(proceed);
 
         if (!proceed) {
           process.exit(0);
@@ -120,15 +122,15 @@ async function main(): Promise<void> {
       state.planApproved = true;
       saveState(config, state);
 
-      io.success(`Plan parsed into ${tasks.length} tasks. Moving to execution.`);
+      ui.success(`Plan parsed into ${tasks.length} tasks. Moving to execution.`);
     }
 
     // --- Phase 2: Execution ---
     if (state.phase === "execution") {
-      const tasks = parsePlanTasks(config);
+      const tasks = loadTasks(config);
 
       if (tasks.length === 0) {
-        io.warn("No tasks found. Skipping execution.");
+        ui.warn("No tasks found. Skipping execution.");
       } else {
         // Resume from where we left off
         const remainingTasks = tasks.filter((_, i) => i >= state.taskIndex);
@@ -151,21 +153,24 @@ async function main(): Promise<void> {
 
     // --- Phase 3: Review ---
     if (state.phase === "review") {
-      const tasks = parsePlanTasks(config);
+      const tasks = loadTasks(config);
       await runReview(config, tasks);
 
       // Mark session as complete
       state.phase = "complete";
       saveState(config, state);
 
-      io.phaseHeader("Session Complete");
-      io.success("All phases complete. Review the findings above.");
-      io.status(
+      ui.phaseIntro("Session Complete");
+      ui.success("All phases complete. Review the findings above.");
+      ui.info(
         "Reputation scores have been updated in memories.json and patterns.json."
       );
     }
-  } finally {
-    io.close();
+
+    ui.outro("Session complete");
+  } catch (err) {
+    ui.error(`Unexpected error: ${err}`);
+    throw err;
   }
 }
 
@@ -183,7 +188,6 @@ async function handleExistingSession(config: { sessionDir: string }): Promise<bo
   const statePath = resolve(config.sessionDir, "state.json");
 
   if (!existsSync(statePath)) {
-    // No previous session — start fresh
     return true;
   }
 
@@ -192,55 +196,52 @@ async function handleExistingSession(config: { sessionDir: string }): Promise<bo
   const phase = prevState.phase || "unknown";
   const startedAt = prevState.startedAt || "unknown";
 
-  io.phaseHeader("Existing Session Detected");
-  io.status(`Started: ${startedAt}`);
-  io.status(`Phase: ${phase}`);
-  console.log("");
+  ui.phaseIntro("Existing Session Detected");
+  ui.info(`Started: ${startedAt}`);
+  ui.info(`Phase: ${phase}`);
 
   if (phase === "complete") {
-    // Session finished — offer archive or delete
-    const choice = await io.ask(
-      "This session is complete. What would you like to do?\n" +
-        "  [a] Archive and start fresh\n" +
-        "  [d] Delete and start fresh\n" +
-        "  [q] Quit\n" +
-        "Choice: "
+    const action = await ui.selectOption(
+      "This session is complete. What would you like to do?",
+      [
+        { value: "archive" as const, label: "Archive", hint: "save and start fresh" },
+        { value: "delete" as const, label: "Delete", hint: "discard and start fresh" },
+        { value: "quit" as const, label: "Quit", hint: "exit without changes" },
+      ],
     );
+    ui.handleCancel(action);
 
-    switch (choice.toLowerCase()) {
-      case "a":
-        archiveSession(config.sessionDir);
-        return true;
-      case "d":
-        deleteSession(config.sessionDir);
-        return true;
-      default:
-        return false;
+    if (action === "archive") {
+      archiveSession(config.sessionDir);
+      return true;
+    } else if (action === "delete") {
+      deleteSession(config.sessionDir);
+      return true;
     }
+    return false;
   } else {
-    // Session in progress — offer resume, archive, or delete
-    const choice = await io.ask(
-      "This session is in progress. What would you like to do?\n" +
-        "  [r] Resume where you left off\n" +
-        "  [a] Archive and start fresh\n" +
-        "  [d] Delete and start fresh\n" +
-        "  [q] Quit\n" +
-        "Choice: "
+    const action = await ui.selectOption(
+      "This session is in progress. What would you like to do?",
+      [
+        { value: "resume" as const, label: "Resume", hint: "continue where you left off" },
+        { value: "archive" as const, label: "Archive", hint: "save and start fresh" },
+        { value: "delete" as const, label: "Delete", hint: "discard and start fresh" },
+        { value: "quit" as const, label: "Quit", hint: "exit without changes" },
+      ],
     );
+    ui.handleCancel(action);
 
-    switch (choice.toLowerCase()) {
-      case "r":
-        io.success("Resuming session.");
-        return true;
-      case "a":
-        archiveSession(config.sessionDir);
-        return true;
-      case "d":
-        deleteSession(config.sessionDir);
-        return true;
-      default:
-        return false;
+    if (action === "resume") {
+      ui.success("Resuming session.");
+      return true;
+    } else if (action === "archive") {
+      archiveSession(config.sessionDir);
+      return true;
+    } else if (action === "delete") {
+      deleteSession(config.sessionDir);
+      return true;
     }
+    return false;
   }
 }
 
@@ -255,12 +256,12 @@ function archiveSession(sessionDir: string): void {
 
   const archivePath = resolve(archiveBase, timestamp);
   renameSync(sessionDir, archivePath);
-  io.success(`Session archived to sessions/${timestamp}/`);
+  ui.success(`Session archived to sessions/${timestamp}/`);
 }
 
 function deleteSession(sessionDir: string): void {
   rmSync(sessionDir, { recursive: true, force: true });
-  io.success("Previous session deleted.");
+  ui.success("Previous session deleted.");
 }
 
 // ---------------------------------------------------------------------------
@@ -276,27 +277,22 @@ function deleteSession(sessionDir: string): void {
 async function collectIntent(config: { sessionDir: string }): Promise<string | null> {
   const intentPath = resolve(config.sessionDir, "intent.md");
 
-  // If resuming a session that already has an intent, use it
   if (existsSync(intentPath)) {
     const existing = readFileSync(intentPath, "utf-8");
-    io.status("Intent loaded from session:");
-    console.log(`\n${existing}\n`);
-    const keepIt = await io.confirm("Use this intent?");
+    ui.showContent("Existing Intent", existing);
+    const keepIt = await ui.confirmAction("Use this intent?");
+    ui.handleCancel(keepIt);
     if (keepIt) return existing;
   }
 
-  console.log("");
-  const intent = await io.askMultiline(
-    "What's your intent for this session?\nDescribe what you want to achieve, why it matters, and what success looks like."
-  );
-
-  if (intent === "") return null;
+  const intent = await ui.collectIntent();
+  ui.handleCancel(intent);
 
   // Persist to session
-  writeFileSync(intentPath, intent);
-  io.success("Intent saved to session/intent.md");
+  writeFileSync(intentPath, intent as string);
+  ui.success("Intent saved to session/intent.md");
 
-  return intent;
+  return intent as string;
 }
 
 // ---------------------------------------------------------------------------

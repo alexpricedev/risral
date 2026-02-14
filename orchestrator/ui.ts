@@ -126,10 +126,9 @@ export function error(message: string): void {
   p.log.error(message);
 }
 
-export function handleCancel(value: unknown): value is symbol {
+export function handleCancel(value: unknown): asserts value is string | number | boolean {
   if (p.isCancel(value)) {
     p.cancel("Session cancelled.");
     process.exit(0);
   }
-  return false;
 }
