@@ -47,7 +47,8 @@ export async function runClaude(
   proc.stdin.write(fullPrompt);
   proc.stdin.end();
 
-  // Stream stdout to terminal while collecting it
+  // Collect stdout silently — no terminal output.
+  // Phase handlers manage spinners and decide what to display.
   let stdout = "";
   const stdoutReader = proc.stdout.getReader();
   const decoder = new TextDecoder();
@@ -55,16 +56,11 @@ export async function runClaude(
   while (true) {
     const { done, value } = await stdoutReader.read();
     if (done) break;
-    const chunk = decoder.decode(value);
-    stdout += chunk;
-    process.stdout.write(chunk);
+    stdout += decoder.decode(value);
   }
 
-  // Collect stderr
+  // Collect stderr silently
   const stderrText = await new Response(proc.stderr).text();
-  if (stderrText) {
-    process.stderr.write(stderrText);
-  }
 
   const exitCode = await proc.exited;
 
