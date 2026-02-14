@@ -3,7 +3,7 @@
 // RISRAL Init — Thin wrapper for backward compatibility
 //
 // Delegates to orchestrator/commands/init.ts.
-// Prefer: bun run start init
+// Prefer: bun run init
 
 import { loadConfig } from "../orchestrator/config.ts";
 import { runInitCommand } from "../orchestrator/commands/init.ts";

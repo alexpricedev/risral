@@ -4,8 +4,11 @@
   "description": "RISRAL — Reputation-Inclusive Self-Referential Agentic Loop. A framework for AI-human collaboration with intent alignment, synthetic reputation, and adversarial self-review.",
   "type": "module",
   "scripts": {
-    "init": "bun run bin/init.ts",
     "start": "bun run orchestrator/index.ts",
+    "plan": "bun run orchestrator/index.ts plan",
+    "learn": "bun run orchestrator/index.ts learn",
+    "status": "bun run orchestrator/index.ts status",
+    "init": "bun run orchestrator/index.ts init",
     "dev": "bun run --watch orchestrator/index.ts"
   },
   "bin": {

@@ -211,7 +211,7 @@ function finishSetup(config: RisralConfig): void {
   p.note(
     [
       `To start a planning session:`,
-      `  bun run start`,
+      `  bun run plan`,
       ``,
       `The orchestrator will:`,
       `  1. Ask for your session intent`,
@@ -221,8 +221,8 @@ function finishSetup(config: RisralConfig): void {
       `  5. Output a plan to paste into Claude Code CLI`,
       ``,
       `After executing the plan:`,
-      `  bun run start learn    Feed outcomes back into reputation`,
-      `  bun run start status   View your reputation state`,
+      `  bun run learn     Feed outcomes back into reputation`,
+      `  bun run status    View your reputation state`,
     ].join("\n"),
     "Ready",
   );

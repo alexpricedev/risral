@@ -79,10 +79,10 @@ Usage:
 
 Commands:
   plan     Run a planning session (default if no command given)
-           Intent -> backbrief -> plan -> cross-check -> approval -> output
+           Intent → backbrief → plan → cross-check → approval → output
   learn    Feed execution outcomes back into the reputation system
   status   View current memories and behavioral patterns
-  init     Set up project intent and data directory
+  init     Set up project intent and data directory (one-time)
 
 Options:
   --model <model>       Claude model to use
@@ -91,11 +91,15 @@ Options:
   -h, --help            Show this help message
 
 Lifecycle:
-  1. bun run init          Set up project intent (one-time)
-  2. bun run start         Plan a session (intent -> backbrief -> plan -> output)
-  3. Execute the plan in Claude Code CLI
-  4. bun run start learn   Feed outcomes back into reputation
-  5. bun run start status  View your reputation state
+  1. bun run init       Set up project intent (one-time)
+  2. bun run plan       Plan a session (intent → backbrief → plan → output)
+  3. Paste the plan output into Claude Code CLI and execute it
+  4. bun run learn      Feed outcomes back into the reputation system
+  5. bun run status     View your reputation state
+
+Shortcuts:
+  bun run start         Alias for 'bun run plan'
+  bun run start <cmd>   Same as 'bun run <cmd>'
 `);
 }
 
