@@ -140,7 +140,7 @@ export async function runPlanning(
     // --- Human Review ---
     ui.phaseIntro("Your review", "Plan and cross-check findings are ready");
 
-    const approvalResult = await ui.confirmAction("Approve this plan and proceed to execution?");
+    const approvalResult = await ui.confirmAction("Approve this plan?");
     ui.handleCancel(approvalResult);
     approved = approvalResult as boolean;
 
@@ -162,7 +162,7 @@ export async function runPlanning(
     }
   }
 
-  ui.success("Plan approved. Moving to execution.");
+  ui.success("Plan approved.");
   return true;
 }
 

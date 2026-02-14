@@ -39,13 +39,6 @@ export interface Task {
   completedAt?: string;
 }
 
-export interface PhaseResult {
-  phase: Phase;
-  success: boolean;
-  outputFile?: string;
-  output?: string;
-}
-
 export interface ClaudeInvocation {
   systemPrompt: string;
   userPrompt: string;
