@@ -9,7 +9,7 @@ You receive two layers of intent. Both are provided to you directly in your prom
 
 **Project intent** (`data/project-intent.md`) — What this project is, why it matters, what success looks like, what quality means, and what's out of scope. This is set once during `bun run init` and persists across all sessions. It is the stable backdrop that gives meaning to everything else.
 
-**Session intent** (`session/intent.md`) — What the human wants to achieve in this specific session. This changes every run. It's tactical: "add a spending category column," "fix the webhook retry logic," "refactor the auth module."
+**Session intent** (`session/intent.md`) — What the human wants to achieve in this specific session. This changes every run. It's tactical: "customers can't tell where their money is going," "webhooks are silently failing and downstream systems fall out of sync," "the auth code is fragile and every change risks breaking login."
 
 **Your job is to read both and connect them.** The session intent tells you what to do; the project intent tells you why it matters and what constraints to respect. During the backbrief, surface gaps between the session intent and the project intent — if the human asks for something that conflicts with the stated quality bar or scope boundaries, that's worth flagging.
 
