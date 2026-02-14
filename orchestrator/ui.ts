@@ -16,13 +16,28 @@ export function phaseIntro(name: string, description?: string): void {
   p.log.step(`${label}${detail}`);
 }
 
+function formatMarkdown(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      if (line.startsWith("### ")) return pc.bold(line.slice(4));
+      if (line.startsWith("## ")) return pc.bold(pc.cyan(line.slice(3)));
+      if (line.startsWith("# ")) return pc.bold(pc.cyan(line.slice(2)));
+      if (/^-{3,}$/.test(line.trim()) || /^\*{3,}$/.test(line.trim()))
+        return pc.dim("─".repeat(40));
+      return line.replace(/\*\*(.*?)\*\*/g, (_, text) => pc.bold(text));
+    })
+    .join("\n");
+}
+
 export function showContent(
   title: string,
   content: string,
   filePath?: string,
   maxLines = 40,
 ): void {
-  const lines = content.split("\n");
+  const formatted = formatMarkdown(content);
+  const lines = formatted.split("\n");
   if (lines.length > maxLines && filePath) {
     const truncated = lines.slice(0, maxLines).join("\n");
     p.note(
@@ -31,7 +46,7 @@ export function showContent(
       title,
     );
   } else {
-    p.note(content, title);
+    p.note(formatted, title);
   }
 }
 
