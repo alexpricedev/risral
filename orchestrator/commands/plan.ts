@@ -14,6 +14,7 @@ import {
   saveTasks,
 } from "../state.ts";
 import { runPlanning } from "../phases/planning.ts";
+import { outputPlan } from "../output.ts";
 import * as ui from "../ui.ts";
 
 export async function runPlanCommand(config: RisralConfig): Promise<void> {
@@ -82,16 +83,27 @@ export async function runPlanCommand(config: RisralConfig): Promise<void> {
       saveState(config, state);
 
       ui.success(`Plan approved with ${tasks.length} tasks.`);
-      // TODO: Task 4 will add the plan output formatter here
-      ui.info("Take the plan from session/plan.md into Claude Code CLI to execute.");
+      outputPlan(config, tasks);
     } else if (state.phase === "complete") {
       ui.info("This session already has an approved plan.");
-      const planPath = resolve(config.sessionDir, "plan.md");
-      if (existsSync(planPath)) {
-        const planContent = readFileSync(planPath, "utf-8");
-        ui.showContent("Approved Plan", planContent, "session/plan.md");
+      const outputPath = resolve(config.sessionDir, "plan-output.md");
+      if (existsSync(outputPath)) {
+        const outputContent = readFileSync(outputPath, "utf-8");
+        ui.showContent("Plan Output", outputContent, "session/plan-output.md");
+      } else {
+        // Regenerate the plan output (e.g. if the session was completed before Task 4 existed)
+        const tasks = parsePlanTasks(config);
+        if (tasks.length > 0) {
+          outputPlan(config, tasks);
+        } else {
+          const planPath = resolve(config.sessionDir, "plan.md");
+          if (existsSync(planPath)) {
+            const planContent = readFileSync(planPath, "utf-8");
+            ui.showContent("Approved Plan", planContent, "session/plan.md");
+          }
+        }
       }
-      ui.info("Take the plan into Claude Code CLI to execute, or run 'learn' to feed outcomes back.");
+      ui.info("Take the plan output into Claude Code CLI to execute, or run 'learn' to feed outcomes back.");
     }
 
     ui.outro("Done");
