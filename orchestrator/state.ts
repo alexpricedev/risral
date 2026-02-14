@@ -38,7 +38,6 @@ export function loadState(config: RisralConfig): OrchestratorState {
 
   return {
     phase: "planning",
-    taskIndex: 0,
     totalTasks: 0,
     planApproved: false,
     startedAt: new Date().toISOString(),
@@ -162,26 +161,3 @@ export function loadTasks(config: RisralConfig): Task[] {
   return JSON.parse(readFileSync(path, "utf-8")) as Task[];
 }
 
-/**
- * Read the accumulated decision log.
- */
-export function readDecisionLog(config: RisralConfig): string {
-  const path = resolve(config.sessionDir, "decision-log.md");
-  if (!existsSync(path)) return "";
-  return readFileSync(path, "utf-8");
-}
-
-/**
- * Append a task's decisions to the decision log.
- */
-export function appendDecisionLog(
-  config: RisralConfig,
-  taskIndex: number,
-  taskTitle: string,
-  content: string
-): void {
-  const path = resolve(config.sessionDir, "decision-log.md");
-  const existing = existsSync(path) ? readFileSync(path, "utf-8") : "";
-  const entry = `\n\n### Task ${taskIndex + 1}: ${taskTitle}\n\n${content}`;
-  writeFileSync(path, existing + entry);
-}

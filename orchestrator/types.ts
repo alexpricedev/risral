@@ -1,12 +1,11 @@
 // RISRAL Orchestrator — Core Types
 
-export type Phase = "planning" | "crosscheck" | "execution" | "review" | "complete";
+export type Phase = "planning" | "crosscheck" | "complete";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "failed";
 
 export interface OrchestratorState {
   phase: Phase;
-  taskIndex: number;
   totalTasks: number;
   planApproved: boolean;
   startedAt: string;
@@ -28,7 +27,7 @@ export interface RisralConfig {
   maxBudgetPerInvocation?: number;
   /** Whether to skip permission checks (for sandboxed environments) */
   skipPermissions?: boolean;
-  /** Allowed tools for execution phases */
+  /** Allowed tools for CLI invocations */
   allowedTools?: string[];
 }
 
