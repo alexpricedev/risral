@@ -6,6 +6,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type { RisralConfig, Task } from "./types.ts";
+import { loadMemories, loadPatterns } from "./memory.ts";
 
 function readFile(path: string): string {
   if (!existsSync(path)) return "";
@@ -35,8 +36,8 @@ function readSessionFile(config: RisralConfig, filename: string): string {
 export function assembleBackbriefPrompt(config: RisralConfig): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
   const projectIntent = readDataFile(config, "project-intent.md");
-  const memories = readDataFile(config, "memories.json");
-  const patterns = readDataFile(config, "patterns.json");
+  const memories = loadMemories(config);
+  const patterns = loadPatterns(config);
   const sessionIntent = readSessionFile(config, "intent.md");
 
   return `${claude}
@@ -57,15 +58,11 @@ ${sessionIntent || "No session intent provided."}
 
 ## Your Reputation Store (Project Memories)
 
-\`\`\`json
 ${memories}
-\`\`\`
 
 ## Portable Behavioral Patterns
 
-\`\`\`json
 ${patterns}
-\`\`\`
 
 ## Instructions
 
@@ -97,8 +94,8 @@ Write your backbrief to: ${resolve(config.sessionDir, "backbrief.md")}
 export function assemblePlanningPrompt(config: RisralConfig): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
   const projectIntent = readDataFile(config, "project-intent.md");
-  const memories = readDataFile(config, "memories.json");
-  const patterns = readDataFile(config, "patterns.json");
+  const memories = loadMemories(config);
+  const patterns = loadPatterns(config);
   const backbrief = readSessionFile(config, "backbrief.md");
   const backbriefFeedback = readSessionFile(config, "backbrief-feedback.md");
 
@@ -116,15 +113,11 @@ ${projectIntent || "No project intent on file."}
 
 ## Your Reputation Store (Project Memories)
 
-\`\`\`json
 ${memories}
-\`\`\`
 
 ## Portable Behavioral Patterns
 
-\`\`\`json
 ${patterns}
-\`\`\`
 
 ## Your Backbrief (from Phase 1a)
 
@@ -162,8 +155,8 @@ Your plan MUST include:
 export function assembleCrossCheckPrompt(config: RisralConfig): string {
   const mandate = readFrameworkFile(config, "cross-check-mandate.md");
   const projectIntent = readDataFile(config, "project-intent.md");
-  const memories = readDataFile(config, "memories.json");
-  const patterns = readDataFile(config, "patterns.json");
+  const memories = loadMemories(config);
+  const patterns = loadPatterns(config);
   const plan = readSessionFile(config, "plan.md");
   const sessionIntent = readSessionFile(config, "intent.md");
 
@@ -185,15 +178,11 @@ ${sessionIntent || "No session intent recorded."}
 
 ## Current Reputation Store
 
-\`\`\`json
 ${memories}
-\`\`\`
 
 ## Current Portable Patterns
 
-\`\`\`json
 ${patterns}
-\`\`\`
 
 ## Primary Agent's Planning Output
 
@@ -222,8 +211,8 @@ export function assembleExecutionPrompt(
 ): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
   const projectIntent = readDataFile(config, "project-intent.md");
-  const memories = readDataFile(config, "memories.json");
-  const patterns = readDataFile(config, "patterns.json");
+  const memories = loadMemories(config);
+  const patterns = loadPatterns(config);
   const plan = readSessionFile(config, "plan.md");
   const sessionIntent = readSessionFile(config, "intent.md");
 
@@ -245,15 +234,11 @@ ${sessionIntent || "No session intent recorded."}
 
 ## Your Reputation Store
 
-\`\`\`json
 ${memories}
-\`\`\`
 
 ## Portable Behavioral Patterns
 
-\`\`\`json
 ${patterns}
-\`\`\`
 
 ## Approved Plan
 
@@ -294,8 +279,8 @@ export function assembleReviewPrompt(
 ): string {
   const claude = readFrameworkFile(config, "CLAUDE.md");
   const projectIntent = readDataFile(config, "project-intent.md");
-  const memories = readDataFile(config, "memories.json");
-  const patterns = readDataFile(config, "patterns.json");
+  const memories = loadMemories(config);
+  const patterns = loadPatterns(config);
   const plan = readSessionFile(config, "plan.md");
   const sessionIntent = readSessionFile(config, "intent.md");
 
@@ -330,15 +315,11 @@ ${sessionIntent || "No session intent recorded."}
 
 ## Reputation Store
 
-\`\`\`json
 ${memories}
-\`\`\`
 
 ## Portable Patterns
 
-\`\`\`json
 ${patterns}
-\`\`\`
 
 ## The Approved Plan
 
