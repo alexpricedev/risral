@@ -34,20 +34,12 @@ export function showContent(
   title: string,
   content: string,
   filePath?: string,
-  maxLines = 40,
 ): void {
   const formatted = formatMarkdown(content);
-  const lines = formatted.split("\n");
-  if (lines.length > maxLines && filePath) {
-    const truncated = lines.slice(0, maxLines).join("\n");
-    p.note(
-      truncated +
-        `\n\n${pc.dim(`... ${lines.length - maxLines} more lines — see ${filePath}`)}`,
-      title,
-    );
-  } else {
-    p.note(formatted, title);
-  }
+  const body = filePath
+    ? formatted + `\n\n${pc.dim(`→ ${filePath}`)}`
+    : formatted;
+  p.note(body, title);
 }
 
 export async function collectIntent(): Promise<string | symbol> {
