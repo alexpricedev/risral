@@ -196,7 +196,29 @@ Write your complete findings to: ${resolve(config.sessionDir, "cross-check.md")}
 
 Write any reputation score updates directly to the memories.json and patterns.json files as specified in your mandate. You have direct authority to update these files.
 
-End with a summary recommendation: APPROVE, REVISE, or ESCALATE.`;
+End with a summary recommendation: APPROVE, REVISE, or ESCALATE.
+
+## Memory Creation Guidance
+
+You have authority to create and update memories. Use it precisely.
+
+**Create a memory when:**
+- You detect a false belief (the agent stated something confidently that is wrong)
+- You observe a behavioral pattern across multiple tasks or plan revisions in this session
+- The agent makes an architectural decision that future sessions need to know about
+- Human feedback contradicts a current memory
+
+**Do NOT create a memory for:**
+- Single-session process quality observations ("the backbrief was good") — these don't persist usefully
+- Facts trivially re-discoverable by reading the code — memories are for things that are hard to re-derive
+- Intermediate states that will change before the session ends
+- Positive reinforcement of the agent's own work — the store tracks failures and decisions, not self-congratulation
+
+**When updating memories:**
+- Always update \`last_updated\` on the root object
+- Deprecate rather than delete — set status to "deprecated" and lower confidence
+- On contradiction: new_score = old_score * 0.8
+- On reinforcement: new_score = old_score + 0.1 * (1 - old_score)`;
 }
 
 /**
@@ -265,7 +287,31 @@ You have full authority to execute this task. The rules:
 
 When this task is complete, write a brief summary of what you did and any decisions you made to: ${resolve(config.sessionDir, `task-${task.index}-complete.md`)}
 
-If you updated any project memories based on what you learned, write them to: ${resolve(config.dataDir, "memories.json")}`;
+If you updated any project memories based on what you learned, write them to: ${resolve(config.dataDir, "memories.json")}
+
+## Memory Creation Guidance
+
+You may update the memory store during execution. Be selective — the memory store is for institutional knowledge, not a session log.
+
+**Create a memory when:**
+- You discover a false belief in the current store (something stated as fact that is wrong)
+- A drift event occurs (you deviate from the plan for a reason worth recording)
+- You make an architectural decision that future sessions need to know about
+- You observe a behavioral pattern across multiple tasks in this session
+- Human feedback contradicts a current memory
+
+**Do NOT create a memory for:**
+- Single-session process quality observations ("the backbrief was good") — these don't persist usefully
+- Facts trivially re-discoverable by reading the code — the codebase is the source of truth for code facts
+- Intermediate states that will change before the session ends
+- Positive reinforcement of your own work — the store tracks failures and decisions, not self-congratulation
+- Per-task progress updates — that's what the task completion files are for
+
+**When updating memories:**
+- Always update \`last_updated\` on the root object
+- Deprecate rather than delete — set status to "deprecated" and lower confidence
+- On contradiction: new_score = old_score * 0.8
+- On reinforcement: new_score = old_score + 0.1 * (1 - old_score)`;
 }
 
 /**
@@ -349,5 +395,30 @@ Also evaluate:
 
 Write your findings to: ${resolve(config.sessionDir, "review.md")}
 
-Update memories.json with drift_event entries for any divergences. You have direct authority to update reputation scores.`;
+Update memories.json with drift_event entries for any divergences. You have direct authority to update reputation scores.
+
+## Memory Creation Guidance
+
+You have authority to create and update memories. The review phase is where most drift_events and pattern observations originate. Be selective — the memory store is institutional knowledge, not a session transcript.
+
+**Create a memory when:**
+- You identify a drift event (justified or unjustified) — these are the review phase's primary contribution to the store
+- You detect a false belief in the current store that execution has disproven
+- You observe a behavioral pattern confirmed across multiple tasks in this session
+- Human feedback during review contradicts a current memory
+- An architectural decision was made during execution that future sessions need to know about
+
+**Do NOT create a memory for:**
+- Single-session process quality observations ("the backbrief was good," "execution was thorough") — these don't persist usefully
+- Facts trivially re-discoverable by reading the code
+- Intermediate states that will change before the session ends
+- Positive reinforcement of the agent's own work
+- Restatements of what's already in the task completion summaries — the memory store captures patterns and decisions, not events
+
+**When updating memories:**
+- Always update \`last_updated\` on the root object
+- Deprecate rather than delete — set status to "deprecated" and lower confidence
+- On contradiction: new_score = old_score * 0.8
+- On reinforcement: new_score = old_score + 0.1 * (1 - old_score)
+- Tag drift_events as "justified" or "unjustified" — this distinction matters for pattern detection`;
 }
