@@ -52,12 +52,13 @@ export function showContent(
 
 export async function collectIntent(): Promise<string | symbol> {
   return p.text({
-    message: "What do you want to achieve in this session?",
+    message:
+      "What outcome do you want from this session? Describe the problem or situation, not the solution.",
     placeholder:
-      "Describe your intent — what you want built, changed, or fixed",
+      "e.g. Users are abandoning checkout — I want to understand why and fix it",
     validate: (value) => {
       if (!value || value.trim().length < 10) {
-        return "Please provide a clear intent (at least 10 characters)";
+        return "Describe the outcome you want or the problem you're experiencing";
       }
     },
   });
