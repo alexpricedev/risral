@@ -9,3 +9,6 @@ session/
 
 # Archived sessions
 sessions/
+
+# Prevent recursion
+.risral
