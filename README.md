@@ -8,6 +8,8 @@ RISRAL takes your intent, has an AI backbrief it (restate, surface assumptions, 
 
 ```bash
 # Requires Bun (https://bun.sh) and Claude Code CLI
+npm i -g risral
+# or
 bun add -g risral
 ```
 

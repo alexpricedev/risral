@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "Backbrief and cross-check your intent before building with AI",
   "type": "module",
+  "files": ["bin/", "lib/", "framework/"],
   "bin": {
     "risral": "bin/risral.ts"
   },
