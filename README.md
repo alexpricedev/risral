@@ -47,6 +47,29 @@ A markdown file in `plans/risral/` containing:
 - [Bun](https://bun.sh) runtime
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
 
+---
+
+## The Problem
+
+AI models are O-shaped — vast knowledge across every domain, no experiential filter. Humans are T-shaped — deep in one or two domains, shaped by decades of consequences. When they collaborate, both sides default to patterns that don't work:
+
+- **Humans give instructions when they should define intent.** The more precisely a human specifies *how*, the more faithfully the AI executes — even when the *how* is wrong.
+- **AI inherits human economics.** It commits early (as if exploring were expensive), defers fixes (as if deferral saved effort), and projects false confidence (as if reputation were at stake). For an AI, none of these constraints apply.
+- **AI has no reputation.** Every session starts at zero. There's no accumulated consequence for being wrong, no scar tissue from past mistakes, no calibrated carefulness built over time.
+
+RISRAL corrects for this by forcing a backbrief (demonstrate understanding before acting) and a cross-check (adversarial review before committing to a plan).
+
+## Theoretical Foundation
+
+RISRAL draws on several converging ideas:
+
+- **Auftragstaktik** (mission-type tactics) — Field Marshal von Moltke's 19th-century insight that alignment and autonomy reinforce each other. Define intent, grant autonomy on action. Mediated through Stephen Bungay's *The Art of Action* and its three gaps: knowledge, alignment, and effects.
+- **The Emdash Problem** — The observation that AI benchmark performance outpaces economic impact because models inherit misaligned economics from training data created by humans operating under different constraints.
+- **Behavioural economics of intelligence** — T-shaped humans compress, defer, and commit because those decisions are rational given their cost structure. O-shaped AI does the same despite having inverted economics where exploring is free and deferral is expensive.
+- **Synthetic reputation** — Since AI lacks persistent memory and accumulated consequences, external mechanisms (backbrief, cross-check, explicit scoring) substitute for the reputation that humans build naturally over time.
+
+---
+
 ## License
 
 MIT
