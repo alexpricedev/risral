@@ -25,7 +25,7 @@ That's it. You'll be guided through:
 4. **Review the plan** — cross-check concerns + high-level step overview
 5. **Accept or revise** — iterate until you're happy, then generate output
 
-The plan is written to `docs/plans/risral/` in your current directory and copied to your clipboard. Paste it into Claude Code.
+The plan is written to `docs/risral/` in your current directory and copied to your clipboard. Paste it into Claude Code.
 
 ### Options
 
@@ -35,7 +35,7 @@ risral --model opus    # Use a different Claude model (default: sonnet)
 
 ## What It Outputs
 
-A markdown file in `docs/plans/risral/` containing:
+A markdown file in `docs/risral/` containing:
 
 - **Concerns** — 1-3 potential issues the cross-check identified
 - **Plan Overview** — numbered high-level steps (plain English)
