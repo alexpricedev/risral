@@ -42,7 +42,7 @@ export function writePlan(intent: string, sections: PlanSections): string {
   const date = new Date().toISOString().slice(0, 10);
   const slug = slugify(intent);
   const filename = `${date}-${slug}.md`;
-  const dir = resolve(process.cwd(), "plans", "risral");
+  const dir = resolve(process.cwd(), "docs", "plans", "risral");
   const filepath = resolve(dir, filename);
 
   mkdirSync(dir, { recursive: true });
