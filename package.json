@@ -14,7 +14,7 @@
   "scripts": {
     "start": "bun run bin/risral.ts",
     "dev": "bun run --watch bin/risral.ts",
-    "publish": "bun run scripts/publish.ts"
+    "release": "bun run scripts/publish.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.0.1",
