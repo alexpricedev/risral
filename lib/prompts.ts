@@ -70,3 +70,21 @@ This section is for the AI that will execute the plan, not the human. Be as deta
 
 **Format your response with exactly these three ## headers. No other top-level headers.**`;
 }
+
+/**
+ * Build the intent-questions prompt.
+ * AI reads the user's situation and generates 2 follow-up questions
+ * that surface unstated intent.
+ */
+export function intentQuestionsPrompt(situation: string): string {
+  return `A human described a situation they want to change:
+
+"${situation}"
+
+Generate exactly 2 short, specific follow-up questions that surface unstated intent. Focus on:
+- Who benefits and what changes for them
+- What "done" looks like concretely
+- What's at stake if this doesn't happen
+
+Return ONLY the two questions, one per line. No numbering, no bullets, no preamble.`;
+}
