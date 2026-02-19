@@ -3,7 +3,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { ask } from "../lib/ai.ts";
-import { backbriefPrompt, crossCheckPrompt } from "../lib/prompts.ts";
+import { backbriefPrompt, crossCheckPrompt, intentQuestionsPrompt } from "../lib/prompts.ts";
 import { parseCrossCheckResponse, writePlan, copyToClipboard } from "../lib/output.ts";
 
 // Parse --model flag
@@ -17,22 +17,67 @@ function handleCancel(value: unknown): asserts value is string {
   }
 }
 
+/**
+ * Parse AI-generated questions from a response string.
+ * Returns up to 2 non-empty lines, stripped of numbering/bullets.
+ * Falls back to a hardcoded question if parsing yields nothing.
+ */
+function parseQuestions(response: string): string[] {
+  const questions = response
+    .split("\n")
+    .map((line) => line.replace(/^[\d.\-*•)\s]+/, "").trim())
+    .filter((line) => line.length > 0 && line.endsWith("?"))
+    .slice(0, 2);
+
+  return questions.length > 0
+    ? questions
+    : ["What does 'done' look like?"];
+}
+
 async function main() {
   console.log();
   p.intro(pc.bgCyan(pc.black(" RISRAL ")));
 
-  // 1. Collect intent
-  const intent = await p.text({
-    message: "What do you want to build?",
-    placeholder: "Describe the outcome, not the solution",
+  // 1. Collect intent (three-step flow)
+
+  // Step 1: Fixed opening question
+  const situation = await p.text({
+    message: "What situation are you trying to change?",
+    placeholder: "Describe the problem or outcome, not the solution",
     validate: (v) => {
-      if (!v || v.trim().length < 10) return "Say more — what's the goal?";
+      if (!v || v.trim().length < 10) return "Say more — what's the situation?";
     },
   });
-  handleCancel(intent);
+  handleCancel(situation);
+
+  // Step 2: AI-generated follow-up questions
+  const spin = p.spinner();
+  spin.start("Thinking about your intent...");
+
+  const questionsResponse = await ask(intentQuestionsPrompt(situation), { model });
+  const questions = parseQuestions(questionsResponse);
+
+  spin.stop("Follow-up questions ready");
+
+  const answers: string[] = [];
+  for (const question of questions) {
+    const answer = await p.text({
+      message: question,
+      validate: (v) => {
+        if (!v || v.trim().length === 0) return "Please answer the question";
+      },
+    });
+    handleCancel(answer);
+    answers.push(answer);
+  }
+
+  // Step 3: Synthesize into intent
+  let intent = `Situation: ${situation}`;
+  for (let i = 0; i < questions.length; i++) {
+    intent += `\n\nQ: ${questions[i]}\nA: ${answers[i]}`;
+  }
 
   // 2. Backbrief
-  const spin = p.spinner();
   spin.start("Backbriefing...");
 
   const backbrief = await ask(backbriefPrompt(intent), { model });
