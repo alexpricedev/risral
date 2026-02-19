@@ -54,7 +54,13 @@ async function main() {
   const spin = p.spinner();
   spin.start("Thinking about your intent...");
 
-  const questionsResponse = await ask(intentQuestionsPrompt(situation), { model });
+  let questionsResponse: string;
+  try {
+    questionsResponse = await ask(intentQuestionsPrompt(situation), { model });
+  } catch (err) {
+    spin.stop("Failed");
+    throw err;
+  }
   const questions = parseQuestions(questionsResponse);
 
   spin.stop("Follow-up questions ready");
@@ -80,7 +86,13 @@ async function main() {
   // 2. Backbrief
   spin.start("Backbriefing...");
 
-  const backbrief = await ask(backbriefPrompt(intent), { model });
+  let backbrief: string;
+  try {
+    backbrief = await ask(backbriefPrompt(intent), { model });
+  } catch (err) {
+    spin.stop("Failed");
+    throw err;
+  }
   spin.stop("Backbrief ready");
 
   p.note(backbrief, "BACKBRIEF");
@@ -100,10 +112,16 @@ async function main() {
   while (true) {
     spin.start("Cross-checking and planning...");
 
-    const crossCheckResult = await ask(
-      crossCheckPrompt(intent, backbrief, userResponse),
-      { model },
-    );
+    let crossCheckResult: string;
+    try {
+      crossCheckResult = await ask(
+        crossCheckPrompt(intent, backbrief, userResponse),
+        { model },
+      );
+    } catch (err) {
+      spin.stop("Failed");
+      throw err;
+    }
     spin.stop("Plan ready");
 
     sections = parseCrossCheckResponse(crossCheckResult);
