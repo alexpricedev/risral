@@ -38,7 +38,7 @@ function slugify(intent: string): string {
  * Write the plan to plans/risral/ in the current working directory.
  * Returns the file path.
  */
-export function writePlan(intent: string, sections: PlanSections): string {
+export function writePlan(intent: string, sections: PlanSections, principles: string): string {
   const date = new Date().toISOString().slice(0, 10);
   const slug = slugify(intent);
   const filename = `${date}-${slug}.md`;
@@ -67,15 +67,9 @@ ${sections.technicalPlan}
 
 ---
 
-## Execution Context
+## Operating Principles
 
-You are executing an approved plan. Follow these principles:
-
-- **Exploring is free.** Consider multiple approaches before committing.
-- **Deferral is expensive.** If something needs doing and it's in scope, do it now.
-- **Thoroughness is free.** Take the time the work requires.
-- When uncertain, say so. When guessing, say so.
-- Follow the plan. Document any decisions that diverge from it.
+${principles}
 `;
 
   writeFileSync(filepath, content);

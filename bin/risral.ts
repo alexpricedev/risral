@@ -2,9 +2,14 @@
 
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { resolve } from "node:path";
 import { ask } from "../lib/ai.ts";
 import { backbriefPrompt, crossCheckPrompt, intentQuestionsPrompt } from "../lib/prompts.ts";
 import { parseCrossCheckResponse, writePlan, copyToClipboard } from "../lib/output.ts";
+
+// Read operating principles once at startup
+const principlesPath = resolve(import.meta.dir, "../framework/principles.md");
+const principles = await Bun.file(principlesPath).text();
 
 // Parse --model flag
 const modelFlag = process.argv.indexOf("--model");
@@ -56,7 +61,7 @@ async function main() {
 
   let questionsResponse: string;
   try {
-    questionsResponse = await ask(intentQuestionsPrompt(situation), { model });
+    questionsResponse = await ask(intentQuestionsPrompt(situation, principles), { model });
   } catch (err) {
     spin.stop("Failed");
     throw err;
@@ -88,7 +93,7 @@ async function main() {
 
   let backbrief: string;
   try {
-    backbrief = await ask(backbriefPrompt(intent), { model });
+    backbrief = await ask(backbriefPrompt(intent, principles), { model });
   } catch (err) {
     spin.stop("Failed");
     throw err;
@@ -115,7 +120,7 @@ async function main() {
     let crossCheckResult: string;
     try {
       crossCheckResult = await ask(
-        crossCheckPrompt(intent, backbrief, userResponse),
+        crossCheckPrompt(intent, backbrief, userResponse, principles),
         { model },
       );
     } catch (err) {
@@ -160,7 +165,7 @@ async function main() {
   }
 
   // 5. Write plan file
-  const filepath = writePlan(intent, sections!);
+  const filepath = writePlan(intent, sections!, principles);
   const copied = copyToClipboard(filepath);
 
   p.log.success(`Written to ${pc.dim(filepath)}`);

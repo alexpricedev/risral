@@ -2,8 +2,14 @@
  * Build the backbrief prompt.
  * AI restates intent, surfaces assumptions, asks clarifying questions.
  */
-export function backbriefPrompt(intent: string): string {
-  return `You are a senior engineer about to plan a piece of work. The human has described what they want. Your job is to demonstrate understanding before committing to a plan.
+export function backbriefPrompt(intent: string, principles: string): string {
+  return `## Operating Principles
+
+${principles}
+
+---
+
+You are a senior engineer about to plan a piece of work. The human has described what they want. Your job is to demonstrate understanding before committing to a plan.
 
 ## The Human's Intent
 
@@ -30,8 +36,14 @@ Keep your response concise and direct. No preamble.`;
  * The response MUST use these exact markdown headers for parsing:
  * ## Concerns, ## Plan Overview, ## Technical Plan
  */
-export function crossCheckPrompt(intent: string, backbrief: string, userResponse: string): string {
-  return `You are a senior engineer. A planning conversation just happened. Review it and produce a plan.
+export function crossCheckPrompt(intent: string, backbrief: string, userResponse: string, principles: string): string {
+  return `## Operating Principles
+
+${principles}
+
+---
+
+You are a senior engineer. A planning conversation just happened. Review it and produce a plan.
 
 ## Original Intent
 
@@ -76,8 +88,14 @@ This section is for the AI that will execute the plan, not the human. Be as deta
  * AI reads the user's situation and generates 2 follow-up questions
  * that surface unstated intent.
  */
-export function intentQuestionsPrompt(situation: string): string {
-  return `A human described a situation they want to change:
+export function intentQuestionsPrompt(situation: string, principles: string): string {
+  return `## Operating Principles
+
+${principles}
+
+---
+
+A human described a situation they want to change:
 
 "${situation}"
 
