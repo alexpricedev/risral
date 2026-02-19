@@ -7,7 +7,6 @@
       "dependencies": {
         "@clack/prompts": "^1.0.1",
         "picocolors": "^1.1.1",
-        "risral": "^0.4.1",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -26,8 +25,6 @@
     "bun-types": ["bun-types@1.3.9", "", { "dependencies": { "@types/node": "*" } }, "sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
-
-    "risral": ["risral@0.4.1", "", { "dependencies": { "@clack/prompts": "^1.0.1", "picocolors": "^1.1.1" }, "bin": { "risral": "bin/risral.ts" } }, "sha512-apwmmfPMlGgShauteHz652DcNbXP5rWvLgywkP7NejFyJI9gyWJ3RgYMmXjY3RmR3soQYnEKfBPQjjkbLNpe8A=="],
 
     "sisteransi": ["sisteransi@1.0.5", "", {}, "sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg=="],
 
