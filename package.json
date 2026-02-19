@@ -1,26 +1,26 @@
 {
-	"name": "risral",
-	"version": "0.4.2",
-	"description": "Backbrief and cross-check your intent before building with AI",
-	"type": "module",
-	"files": [
-		"bin/",
-		"lib/",
-		"framework/"
-	],
-	"bin": {
-		"risral": "bin/risral.ts"
-	},
-	"scripts": {
-		"start": "bun run bin/risral.ts",
-		"dev": "bun run --watch bin/risral.ts",
-		"release": "bun run scripts/publish.ts"
-	},
-	"dependencies": {
-		"@clack/prompts": "^1.0.1",
-		"picocolors": "^1.1.1"
-	},
-	"devDependencies": {
-		"@types/bun": "latest"
-	}
+  "name": "risral",
+  "version": "0.4.3",
+  "description": "Backbrief and cross-check your intent before building with AI",
+  "type": "module",
+  "files": [
+    "bin/",
+    "lib/",
+    "framework/"
+  ],
+  "bin": {
+    "risral": "bin/risral.ts"
+  },
+  "scripts": {
+    "start": "bun run bin/risral.ts",
+    "dev": "bun run --watch bin/risral.ts",
+    "release": "bun run scripts/publish.ts"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.0.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
 }
