@@ -1,6 +1,6 @@
 {
   "name": "risral",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Backbrief and cross-check your intent before building with AI",
   "type": "module",
   "files": [
