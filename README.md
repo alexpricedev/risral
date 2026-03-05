@@ -164,7 +164,7 @@ See [`scripts/headless-examples.sh`](scripts/headless-examples.sh) for more patt
 
 ### Persistent Memory
 
-Both subagents use `memory: project`, which means they build up knowledge about your codebase across sessions. The first time RISRAL plans something, it starts fresh. The tenth time, it remembers past decisions, patterns it discovered, and what worked. This accumulates in `.claude/agent-memory/` (gitignored by default).
+Both subagents use `memory: project`, which means they build up knowledge about your codebase across sessions. The first time RISRAL plans something, it starts fresh. The tenth time, it remembers past decisions, patterns it discovered, and what worked. This accumulates in `.claude/agent-memory/` and is committed to the repo so the team shares context.
 
 ### Operating Principles
 
