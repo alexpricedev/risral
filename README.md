@@ -8,9 +8,7 @@ It works by adding [custom subagents](https://code.claude.com/docs/en/sub-agents
 
 ## Quick Start
 
-**1. Install [Claude Code](https://code.claude.com/docs/en/getting-started) if you haven't already.**
-
-**2. Copy the RISRAL agents into your project:**
+**1. Install the RISRAL agents into your project:**
 
 ```bash
 git clone https://github.com/alexpricedev/risral.git /tmp/risral
@@ -18,7 +16,7 @@ mkdir -p your-project/.claude
 cp -r /tmp/risral/.claude/agents /tmp/risral/.claude/skills your-project/.claude/
 ```
 
-**3. Open Claude Code in your project and try it:**
+**2. Open Claude Code in your project and try it:**
 
 ```
 > Use risral to plan adding rate limiting to our API
@@ -80,7 +78,7 @@ The plan stays in context. No clipboard, no copy-paste, no context loss between 
 
 ### Per-project (recommended)
 
-Copy the agents and skills into your project's `.claude/` directory. This way your team gets RISRAL when they clone the repo.
+Install the agents and skills into your project's `.claude/` directory. This way your team gets RISRAL when they clone the repo.
 
 ```bash
 git clone https://github.com/alexpricedev/risral.git /tmp/risral
@@ -90,7 +88,7 @@ cp -r /tmp/risral/.claude/agents /tmp/risral/.claude/skills your-project/.claude
 
 ### Global (all projects)
 
-Install to your home directory so RISRAL is available in every project on your machine.
+Install the agents and skills to your home directory so RISRAL is available in every project on your machine.
 
 ```bash
 git clone https://github.com/alexpricedev/risral.git /tmp/risral
@@ -166,7 +164,7 @@ See [`scripts/headless-examples.sh`](scripts/headless-examples.sh) for more patt
 
 ### Persistent Memory
 
-Both subagents use `memory: project`, which means they build up knowledge about your codebase across sessions. The first time RISRAL plans something, it starts fresh. The tenth time, it remembers past decisions, patterns it discovered, and what worked. This accumulates in `.claude/agent-memory/` (gitignored by default).
+Both subagents use `memory: project`, which means they build up knowledge about your codebase across sessions. The first time RISRAL plans something, it starts fresh. The tenth time, it remembers past decisions, patterns it discovered, and what worked. This accumulates in `.claude/agent-memory/` and is committed to the repo so the team shares context.
 
 ### Operating Principles
 
