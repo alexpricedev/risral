@@ -1,6 +1,3 @@
 .DS_Store
-node_modules/
-docs/
-
-# Prevent recursion
-.risral
+.claude/agent-memory/
+.claude/agent-memory-local/
