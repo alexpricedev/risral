@@ -2,114 +2,168 @@
 
 **Backbrief and cross-check your intent before building with AI.**
 
-RISRAL takes your intent, has an AI backbrief it (restate, surface assumptions, ask questions), then cross-checks the plan for gaps before you bring it into Claude Code. One command, no ceremony.
+RISRAL is a set of Claude Code subagents that force demonstrated understanding before action. Instead of jumping straight to implementation, RISRAL backbriefs your intent (restates it, surfaces assumptions, asks questions) and cross-checks the plan for gaps — all inside your Claude Code session, with full codebase access.
 
 ## What a Session Looks Like
 
 ```
-$ risral
+> Use risral to plan adding rate limiting to our API
 
-┌  RISRAL
-│
-◆  What situation are you trying to change?
-│  Our API has no rate limiting and we're getting hit by bots
-│
-◇  Thinking about your intent...
-│
-◆  What breaks first when a bot flood hits — user experience, database, or billing?
-│  Billing. We pay per-request to a downstream provider.
-│
-◆  Who needs to be unaffected by rate limits — just bots, or are power users at risk too?
-│  Power users are fine, they do maybe 10 req/min. Bots do 1000+.
-│
-◇  Backbriefing...
-│
-│  BACKBRIEF
-│  You need request-rate throttling to protect downstream costs.
-│  The target is bot traffic (1000+ rpm), not legitimate power users (~10 rpm).
-│  Assumption: you want this at the API gateway level, not per-endpoint.
-│  Gap: no mention of what should happen to throttled requests — 429? silent drop? queue?
-│
-│  Questions:
-│  - Should throttled requests get a 429 with retry-after, or be silently dropped?
-│  - Is there an existing API gateway (nginx, cloudflare) or is this in-app middleware?
-│
-◆  Your response:
-│  429 with retry-after. We use Express directly, no gateway.
-│
-◇  Cross-checking and planning...
-│
-│  ⚠ CROSS-CHECK
-│  - Express rate limiting middleware (express-rate-limit) handles this well but
-│    operates per-process — if you run multiple instances, you'll need a shared
-│    store (Redis).
-│
-│  PLAN OVERVIEW
-│  1. Add express-rate-limit middleware with a 100 req/min default
-│  2. Configure 429 responses with retry-after headers
-│  3. Add Redis store for multi-instance deployments
-│  4. Add rate limit bypass for health check endpoints
-│  5. Test with load simulation
-│
-◆  Accept this plan?
-│  ● Yes, generate output
-│
-└  Done. Paste the plan into Claude Code.
+[risral subagent activates]
+
+I'll explore the codebase first to understand the current architecture...
+
+[reads routes, middleware, package.json, deployment config]
+
+Two questions before I backbrief:
+
+1. What breaks first when a bot flood hits — user experience, database, or billing?
+2. Who needs to be unaffected by rate limits — just bots, or are power users at risk?
+
+> Billing — we pay per-request to a downstream provider.
+> Power users are fine, ~10 req/min. Bots do 1000+.
+
+BACKBRIEF
+
+You need request-rate throttling to protect downstream costs. The target is
+bot traffic (1000+ rpm), not legitimate power users (~10 rpm).
+
+I found your Express app has no existing middleware for this. You're running
+a single process in production (based on the Dockerfile), but your k8s config
+suggests you'll scale to multiple replicas.
+
+Assumption: you want this at the middleware level, not per-endpoint.
+Gap: no mention of what should happen to throttled requests — 429? silent drop?
+
+> 429 with retry-after. Good catch on the k8s replicas.
+
+CONCERNS
+- express-rate-limit operates per-process. With multiple k8s replicas,
+  you need a shared store (Redis) or requests will be split across instances.
+
+PLAN OVERVIEW
+1. Add express-rate-limit middleware with 100 req/min default
+2. Configure 429 responses with retry-after headers
+3. Add Redis store for multi-instance deployments
+4. Bypass rate limits for health check endpoints
+5. Test with load simulation
+
+[human accepts plan]
+[Claude executes the plan in the same session with full context]
 ```
 
-The output file (written to `docs/risral/` and copied to your clipboard) contains the concerns, plain-English overview, **and** a detailed technical plan for Claude Code to execute.
+No clipboard. No copy-paste. The plan stays in context and Claude executes it directly.
 
 ## Install
 
-```bash
-# Requires Bun (https://bun.sh) and Claude Code CLI
-bun add -g risral
-```
-
-## Prerequisites
-
-1. **[Bun](https://bun.sh)** runtime — `curl -fsSL https://bun.sh/install | bash`
-2. **[Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)** installed and authenticated — this is what RISRAL uses under the hood
-
-Verify both are working:
+Copy the `.claude/` directory into your project:
 
 ```bash
-bun --version    # should print a version number
-claude --version # should print Claude Code version
+# Clone and copy the agents + skills into your project
+git clone https://github.com/alexpricedev/risral.git /tmp/risral
+cp -r /tmp/risral/.claude/agents /tmp/risral/.claude/skills your-project/.claude/
 ```
+
+Or install globally for all projects:
+
+```bash
+cp -r /tmp/risral/.claude/agents/* ~/.claude/agents/
+cp -r /tmp/risral/.claude/skills/* ~/.claude/skills/
+```
+
+### Prerequisites
+
+- **[Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)** installed and authenticated
+
+That's it. No Bun, no npm package, no external runtime.
 
 ## Usage
 
-```bash
-# From your current project directory
-risral
+### Interactive (inside Claude Code)
+
+```
+# Plan a feature
+> Use risral to plan adding OAuth2 support
+
+# Review after implementation
+> Use risral-review to check if the OAuth2 implementation matches the plan
+
+# Load principles into any conversation
+> Load the risral-principles skill
 ```
 
-That's it. You'll be guided through:
+Claude automatically delegates to the right subagent based on the task.
 
-1. **Describe your situation** — what you want to change (not the solution)
-2. **Answer follow-ups** — AI asks 2 targeted questions to surface unstated intent
-3. **Review the backbrief** — AI restates your intent, surfaces assumptions, asks questions
-4. **Respond** — answer questions, add context, correct assumptions
-5. **Review the plan** — cross-check concerns + high-level step overview
-6. **Accept or revise** — iterate until you're happy, then generate output
-
-The plan is written to `docs/risral/` in your current directory and copied to your clipboard. Paste it into Claude Code.
-
-### Options
+### Headless (scripted / CI)
 
 ```bash
-risral --model opus    # Use a different Claude model (default: sonnet)
+# Basic backbrief
+claude -p "Use the risral agent to plan: Add rate limiting to the API" \
+  --allowedTools "Read,Grep,Glob,Bash(git *),Bash(ls *)"
+
+# Structured JSON output
+claude -p "Use the risral agent to analyze: Migrate auth to OAuth2" \
+  --output-format json \
+  --json-schema '{"type":"object","properties":{"concerns":{"type":"array","items":{"type":"string"}},"plan_steps":{"type":"array","items":{"type":"string"}}}}'
+
+# PR review gate
+gh pr diff 42 | claude -p "Use risral-review to cross-check this diff" \
+  --allowedTools "Read,Grep,Glob,Bash(git *)"
+
+# Inline agent (no .claude/ directory needed)
+claude -p "Plan: $TASK" --agents '{
+  "risral": {
+    "description": "Backbrief and cross-check intent before implementation.",
+    "prompt": "You are RISRAL. Before planning: 1) Ask 2 questions to surface intent 2) Backbrief: restate, surface assumptions, identify gaps 3) Cross-check: list concerns, produce plan. Exploring is free. Never commit to the first approach.",
+    "tools": ["Read", "Grep", "Glob", "Bash"],
+    "model": "sonnet"
+  }
+}'
 ```
 
-## What It Outputs
+See `scripts/headless-examples.sh` for more patterns.
 
-A markdown file in `docs/risral/` containing:
+## What's Included
 
-- **Concerns** — 1-3 potential issues the cross-check identified
-- **Plan Overview** — numbered high-level steps (plain English)
-- **Technical Plan** — detailed implementation spec for the AI
-- **Execution Context** — operating principles for Claude Code
+| File | Purpose |
+|---|---|
+| `.claude/agents/risral.md` | Main planning agent — backbrief + cross-check with codebase exploration and persistent memory |
+| `.claude/agents/risral-review.md` | Post-implementation review agent — verifies intent match and captures learnings |
+| `.claude/skills/risral-principles.md` | Operating principles skill — loadable into any agent or conversation |
+| `scripts/headless-examples.sh` | Headless mode examples for CI/CD and scripting |
+
+## Architecture
+
+### Subagents vs. the old CLI wrapper
+
+Previous versions of RISRAL were a standalone CLI tool that produced a markdown file you'd paste into Claude Code. That approach had a fundamental limitation: **context loss**. The backbrief exchange, cross-check concerns, and operating principles all evaporated the moment you opened a new session.
+
+The subagent architecture solves this:
+
+- **No context loss** — the subagent runs inside Claude Code. Its output stays in the conversation and informs execution directly.
+- **Codebase access** — the subagent reads your actual code during planning, so backbriefs reference real files, patterns, and dependencies.
+- **Persistent memory** — the `memory: project` setting gives each subagent a persistent directory (`.claude/agent-memory/`) that accumulates learnings across sessions. This is synthetic reputation — the thing the old reputation system tried to build manually.
+- **No external runtime** — no Bun, no npm package. Just markdown files that Claude Code reads natively.
+
+### The RISRAL Process
+
+1. **Situation** — human describes what they want to change (not the solution)
+2. **Exploration** — subagent reads the relevant codebase
+3. **Intent questions** — 2 targeted questions surface unstated assumptions
+4. **Backbrief** — subagent restates intent, surfaces gaps, proposes "done" criteria
+5. **Cross-check** — adversarial review: concerns + plan with technical detail
+6. **Execution** — Claude acts on the plan with full context preserved
+7. **Review** (optional) — risral-review verifies implementation matches intent
+
+### Operating Principles
+
+Baked into every RISRAL agent:
+
+- **Exploring is free.** Never commit to the first viable approach.
+- **Deferral is expensive.** No future session remembers this one.
+- **Intent over instruction.** Hear the why behind the how.
+- **No aim-to-please.** Optimize for the work succeeding, not the human feeling good.
+- **Show uncertainty.** Never collapse uncertainty into false confidence.
 
 ---
 
@@ -130,7 +184,7 @@ RISRAL draws on several converging ideas:
 - **Auftragstaktik** (mission-type tactics) — Field Marshal von Moltke's 19th-century insight that alignment and autonomy reinforce each other. Define intent, grant autonomy on action. Mediated through Stephen Bungay's *The Art of Action* and its three gaps: knowledge, alignment, and effects.
 - **The Emdash Problem** — The observation that AI benchmark performance outpaces economic impact because models inherit misaligned economics from training data created by humans operating under different constraints.
 - **Behavioural economics of intelligence** — T-shaped humans compress, defer, and commit because those decisions are rational given their cost structure. O-shaped AI does the same despite having inverted economics where exploring is free and deferral is expensive.
-- **Synthetic reputation** — Since AI lacks persistent memory and accumulated consequences, external mechanisms (backbrief, cross-check, explicit scoring) substitute for the reputation that humans build naturally over time.
+- **Synthetic reputation** — Since AI lacks persistent memory and accumulated consequences, external mechanisms (backbrief, cross-check, persistent memory) substitute for the reputation that humans build naturally over time.
 
 ---
 
