@@ -12,8 +12,9 @@ It works by adding [custom subagents](https://code.claude.com/docs/en/sub-agents
 
 ```bash
 git clone https://github.com/alexpricedev/risral.git /tmp/risral
-mkdir -p your-project/.claude
-cp -r /tmp/risral/.claude/agents /tmp/risral/.claude/skills your-project/.claude/
+cd your-project
+mkdir -p .claude
+cp -r /tmp/risral/.claude/agents /tmp/risral/.claude/skills .claude/
 ```
 
 **2. Open Claude Code in your project and try it:**
